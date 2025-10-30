@@ -1,5 +1,5 @@
 # 💫 Hi my name is Aery! :)
-🇺🇸 I'm a software dev based in the United States!<br>🐟 Currently working on Fishcord!<br>🌱 Currently learning: Rust.
+🇺🇸 I'm a software dev based in the United States!<br>🐟 Currently studying!<br>🌱 Currently learning: Rust.
 
 
 ## 🌐 Reach out to me:
