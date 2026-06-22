@@ -4,8 +4,8 @@
 
 **software engineer · product builder · systems thinker**
 
-I like building things that feel simple on the surface
-and thoughtful underneath.
+i like building things that feel simple on the surface
+and thoughtful underneath
 
 </div>
 
@@ -44,7 +44,7 @@ software that people will actually use
 
 ### around here
 
-Most of my best work is in private or in-progress repos right now,
+most of my best work is in private or in-progress repos right now,
 but this profile is where i’ll keep making more of the build process visible.
 
 <div align="center">
