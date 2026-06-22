@@ -45,7 +45,7 @@ software that people will actually use
 ### around here
 
 most of my best work is in private or in-progress repos right now,
-but this profile is where i’ll keep making more of the build process visible.
+but this profile is where i’ll keep making more of the build process visible
 
 <div align="center">
 
