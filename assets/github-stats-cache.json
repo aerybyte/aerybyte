@@ -1,18 +1,18 @@
 {
   "login": "aerybyte",
   "stats": {
-    "additions": 1564,
-    "commits": 13,
-    "contributions": null,
-    "deletions": 305,
+    "additions": 1570,
+    "commits": 14,
+    "contributions": 390,
+    "deletions": 307,
     "includes_private": false,
     "language_weights": {
-      "Python": 628
+      "Python": 78273
     },
-    "lines_of_code": 16923,
+    "lines_of_code": 2060,
     "repo_count": 1,
-    "source": "GitHub REST API",
+    "source": "GitHub GraphQL",
     "stars": 0
   },
-  "updated_at_utc": "2026-07-10T18:03:37+00:00"
+  "updated_at_utc": "2026-07-10T18:05:06+00:00"
 }
