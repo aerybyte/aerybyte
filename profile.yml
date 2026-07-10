@@ -1,0 +1,55 @@
+# Personalized for @aerybyte.
+# Blank values disappear from the generated card.
+
+profile:
+  role: "software engineer · product builder · systems thinker"
+  tagline: "simple on the surface · thoughtful underneath"
+  show_location: false
+  show_website: false
+
+sections:
+  now:
+    building: "ATP — Around The Post"
+    product: "a social app for better pickleball games"
+    learning: "scalable architecture · mobile-first design"
+    exploring: "developer tools · automation loops · clean UX"
+  stack:
+    client: "TypeScript · React · React Native"
+    web: "Next.js"
+    backend: "Python · Postgres"
+
+uptime:
+  label: "human uptime"
+  source: "custom"
+  start_date: "2004-07-13"
+  # Use an IANA zone instead of a fixed UTC-05:00 offset so EDT is handled too.
+  timezone: "America/New_York"
+  timezone_display: "Eastern Time"
+  precision: "days"
+
+display:
+  top_languages: 4
+  exclude_languages:
+    - HTML
+    - CSS
+  contributions_window_days: 365
+  show_public_email: false
+
+  # Blank = fetch the current GitHub profile picture on every scheduled run.
+  avatar_path: ""
+  # Last successful download. It is also the offline/emergency fallback.
+  avatar_cache_path: "assets/avatar.png"
+  ascii_width: 54
+  avatar_vertical_focus: 0.50
+  avatar_zoom: 1.05
+  ascii_shape: "rounded_square" # rounded_square, circle, or square
+
+theme:
+  accent: "#f97316"
+  accent_2: "#14b8a6"
+
+preview:
+  # Used only by `python scripts/build_profile.py --offline`.
+  name: "aery"
+  public_repos: 1
+  stars: 0
