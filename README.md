@@ -1,53 +1,32 @@
-# aery
-
 ```text
-+----------------------------------------------+------------------------------------------------------------+
-|    iiiiiirrrrrrsrs2AXssrsXrrrrrrsrrXM25AA;i  | aerybyte ------------------------------------------------- |
-|   iiiiiiiirrrrrrrAAXrsrrsrrrrrrsiii23hMMA;ri | profile -------------------------------------------------- |
-|  iiiiiriiiirrrrrX2AsssrssrrrrirriirAi5XX2iii | handle: ........................................ @aerybyte |
-| rriiiiriiirrrrrs2AXssrssrrrriiriiisGhM3h5sii | role: ..... software engineer · product builder · systems… |
-| iriiiiiiiiirrrr2AXssrrsiirii;rrii;2523AMHsir | tagline: ............. simple on the surface · thoughtful… |
-| iriiiiiiiirrrsXXAXrrsX25AAXsssiiiAM2HhAX5Xir | now ------------------------------------------------------ |
-| ;riiiiiiiiirrX :isA33MGMrr.AMh3Xs5rMH3Mh2Xrr | building: .......................... ATP — Around The Post |
-| ;iiiiiiiiirrX, ;r.AGhhH;:s ,5Mhhh5hS5A2M3sri | product: ........ a social app for better pickleball games |
-| :iririiiiiis: .i::2sMX5r,X, XMhhhM35h5rA2sri | learning: .... scalable architecture · mobile-first design |
-| :iriiiiiiirA;....;A:5,2r...:rhHMM3hXXh22Xsii | exploring: ......... developer tools · automation loops ·… |
-| :;riiiiii;XX:.,..,:,i,r.,,.:s3hhHMhMss32AXii | stack ---------------------------------------------------- |
-| :;riiiirisr.,rrr;..,,,..,,:.,i2MHHh2322A2Xsr | client: ................ TypeScript · React · React Native |
-| :;riiiiirs.:sMMM3i.,,,,rA22i::iA22hsA3A22AXs | web: ............................................. Next.js |
-| ::rrrriiX:.i3SSSHs,,,.ihSSS2r,isAr5Xr522AAXX | backend: ............................... Python · Postgres |
-| ::iirrirs  i5HHM3r....sHHSGMr;;rAsrriX5AAAXX | github --live -------------------------------------------- |
-| ::isriisi  ,s332s, .. ;5HM52r,;rAs;irs5AXXXX | human uptime: ............... 21 years, 11 months, 27 days |
-| :,;sAXiXX  :s,;,   .   :sAX;. :iAsrAXr5Xssss | timezone: ................. Eastern Time · EDT · UTC-04:00 |
-| ::iiirX55rr5:     .X       :;:rA2Xsrii2sssXs | public repos: .......................................... 1 |
-| ::sAXsA2sXXr;:,.,;ii;.    .Ar;r2risriiAssXXs | stars earned: .......................................... 0 |
-| :::rrXXAs;;..,,:,.  ,;;::;;irs2XXsAsi;Asssss | followers: ............................. live on first run |
-| :,:ss2X5X  .,.             .iXsrssXXri2ssssX | contribs · 365d: ....................... live on first run |
-| ri;s2Xrss.   ..            ,::;;;rri;sAsssss | contact -------------------------------------------------- |
-| iirsXsrsr;                  ,;ii;sii;2ssssXs | github: .............................. github.com/aerybyte |
-| iiirXsrrs:i                 ,;i;ir;;sAssrss; | repositories: ....... github.com/aerybyte?tab=repositories |
-| ::iis;;:ii,i               .,i;rr;;rArssrr;: | automation ----------------------------------------------- |
-| ::;:::::,s;,i,             .;irr;;sAssri;;:: | refresh cron: ............................... 17 */6 * * * |
-| :;::::::;:ii,;:          .,;iii;rAAssr;:;;:: | refresh timezone: ........................... Eastern Time |
-| ;:::::::;:,;riir;       .,irrrsA2Xri;:::;::: | contrib window: ................................. 365 days |
-| ;::::::;:::,,;irXi::,,:;irXA2AXsr;:::::;;::: | next refresh in: .................................. 0h 42m |
-| :::::::;:::::,,;,r;;rrrsr2XXXrii:,:::::;:::: | next refresh at: .................... 2026-07-10 12:17 EDT |
-| ::::::;:::::::;:,;s.X2.;22sr;::;:::::::;:::: | avatar pipeline: ............ github avatar -> color ASCII |
-| :,,::;::::::::;::,isrissX;:::,;:::::::;::::: | commit strategy: ...................... changed files only |
-|  AX,:;:::::::;::::,:,:;:,,::::;:::::::;::::, | last sync: .......................... 2026-07-10 11:35 EDT |
-|   r,;::::::::;:::::::;:::::::;:::::::;:::::, |                                                            |
-|    ;;:::::::;:::::::;::::::::;:::::::;:::;,  |                                                            |
-+----------------------------------------------+------------------------------------------------------------+
++----------------------------------------------+   +------------------------------------------------------------+
+|    iiiiiirrrrrrsrs2AXssrsXrrrrrrsrrXM25AA;i  |   | [profile]                                                  |
+|   iiiiiiiirrrrrrrAAXrsrrsrrrrrrsiii23hMMA;r  |   | handle = @aerybyte                                         |
+| rriiiiriiirrrrrs2AXssrssrrrriiriiisGhM3h5si  |   | role = software engineer · product builder                 |
+| iriiiiiiiiirrrr2AXssrrsiirii;rrii;2523AMHsi  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| iriiiiiiiirrrsXXAXrrsX25AAXsssiiiAM2HhAX5Xi  |   | [now]                                                      |
+| ;iiiiiiiiirrX, ;r.AGhhH;:s ,5Mhhh5hS5A2M3sr  |   | building = ATP — Around The Post                           |
+| :iririiiiiis: .i::2sMX5r,X, XMhhhM35h5rA2sr  |   | learning = scalable architecture · mobile-first design     |
+| :;riiiiii;XX:.,..,:,i,r.,,.:s3hhHMhMss32AXi  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| :;riiiirisr.,rrr;..,,,..,,:.,i2MHHh2322A2Xs  |   | [top skills]                                               |
+| :;riiiiirs.:sMMM3i.,,,,rA22i::iA22hsA3A22AX  |   | languages = Python · TypeScript · JavaScript · C#          |
+| ::iirrirs  i5HHM3r....sHHSGMr;;rAsrriX5AAAX  |   | frontend = React · Next.js · React Native                  |
+| ::isriisi  ,s332s, .. ;5HM52r,;rAs;irs5AXXX  |   | backend = Node.js · Supabase · PostgreSQL                  |
+| :,;sAXiXX  :s,;,   .   :sAX;. :iAsrAXr5Xsss  |   | devops = Git · Docker · Kubernetes                         |
+| ::sAXsA2sXXr;:,.,;ii;.    .Ar;r2risriiAssXX  |   | cloud = Render · Sentry integration · Cloudflare           |
+| :::rrXXAs;;..,,:,.  ,;;::;;irs2XXsAsi;Assss  |   | analytics = Power BI · data scraping · data analysis       |
+| :,:ss2X5X  .,.             .iXsrssXXri2ssss  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| iirsXsrsr;                  ,;ii;sii;2ssssX  |   | [github live]                                              |
+| iiirXsrrs:i                 ,;i;ir;;sAssrss  |   | human uptime = 21 years, 11 months, 27 days                |
+| ::iis;;:ii,i               .,i;rr;;rArssrr;  |   | timezone = Eastern Time · EDT · UTC-04:00                  |
+| :;::::::;:ii,;:          .,;iii;rAAssr;:;;:  |   | languages = Python · TypeScript · JavaScript · C#          |
+| ;:::::::;:,;riir;       .,irrrsA2Xri;:::;::  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| :::::::;:::::,,;,r;;rrrsr2XXXrii:,:::::;:::  |   | [automation]                                               |
+| ::::::;:::::::;:,;s.X2.;22sr;::;:::::::;:::  |   | data source = preview                                      |
+| :,,::;::::::::;::,isrissX;:::,;:::::::;::::  |   | next refresh at = 2026-07-10 12:17 EDT                     |
+|   r,;::::::::;:::::::;:::::::;:::::::;:::::  |   | refresh timezone = Eastern Time                            |
+|    ;;:::::::;:::::::;::::::::;:::::::;:::;,  |   |                                                            |
++----------------------------------------------+   +------------------------------------------------------------+
 ```
-
-```diff
-+ live source: preview
-+ next refresh: 2026-07-10 12:17 EDT (0h 42m)
-! timezone-aware cron: 17 */6 * * * (EST/EDT)
-```
-
-- dynamic profile: live public GitHub stats + avatar-to-ASCII renderer
-- automation: cron every 6 hours in Eastern Time (EST/EDT aware)
-- commit policy: push only when generated content actually changes
 
 <!-- Generated by scripts/build_profile.py -->

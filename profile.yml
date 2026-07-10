@@ -1,9 +1,9 @@
-# Personalized for @aerybyte.
-# Blank values disappear from the generated card.
+# personalized for @aerybyte.
+# blank values disappear from the generated card.
 
 profile:
-  role: "software engineer · product builder · systems thinker"
-  tagline: "simple on the surface · thoughtful underneath"
+  role: "software engineer · product builder"
+  tagline: ""
   show_location: false
   show_website: false
 
@@ -14,15 +14,18 @@ sections:
     learning: "scalable architecture · mobile-first design"
     exploring: "developer tools · automation loops · clean UX"
   stack:
-    client: "TypeScript · React · React Native"
-    web: "Next.js"
-    backend: "Python · Postgres"
+    languages: "Python · TypeScript · JavaScript · C# · Java · C · SQL"
+    frontend: "React · Next.js · React Native · TypeScript · HTML · CSS · Tailwind CSS"
+    backend & data: "Node.js · Supabase · PostgreSQL · MongoDB Atlas · Snowflake · MySQL · REST APIs · migrations · authN/authZ"
+    testing & devops: "Git · Docker · Kubernetes · CI/CD · GitHub Actions · Vitest · Playwright · mobile simulator testing · security smoke tests · secrets scanning"
+    cloud/security/obs: "Render · Sentry integration · Cloudflare · CORS/security headers · native error logging · privacy-safe admin tooling"
+    analytics: "Power BI · data scraping · data analysis · SQL querying"
 
 uptime:
   label: "human uptime"
   source: "custom"
   start_date: "2004-07-13"
-  # Use an IANA zone instead of a fixed UTC-05:00 offset so EDT is handled too.
+  # use an iana zone instead of a fixed utc-05:00 offset so edt is handled too.
   timezone: "America/New_York"
   timezone_display: "Eastern Time"
   precision: "days"
@@ -42,11 +45,13 @@ display:
     - automation
   readme_ascii_column_width: 44
   readme_info_column_width: 58
+  readme_avatar_rows_ratio: 0.56
+  readme_compact: true
   show_public_email: false
 
-  # Blank = fetch the current GitHub profile picture on every scheduled run.
+  # blank = fetch the current github profile picture on every scheduled run.
   avatar_path: ""
-  # Last successful download. It is also the offline/emergency fallback.
+  # last successful download. it is also the offline/emergency fallback.
   avatar_cache_path: "assets/avatar.png"
   ascii_width: 46
   avatar_vertical_focus: 0.50
@@ -58,7 +63,7 @@ theme:
   accent_2: "#14b8a6"
 
 preview:
-  # Used only by `python scripts/build_profile.py --offline`.
+  # used only by `python scripts/build_profile.py --offline`.
   name: "aery"
   public_repos: 1
   stars: 0

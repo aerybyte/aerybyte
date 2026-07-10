@@ -679,7 +679,7 @@ def profile_rows(profile: Mapping[str, Any], config: Mapping[str, Any]) -> list[
     rows = [
         ("handle", f"@{profile.get('login', '')}", "accent2"),
         ("role", clean(profile_config.get("role"), 58), "text"),
-        ("tagline", clean(profile_config.get("tagline") or profile.get("bio"), 58), "text"),
+        ("tagline", clean(profile_config.get("tagline"), 58), "text"),
     ]
     if profile_config.get("show_location", False):
         rows.append(("location", clean(profile.get("location"), 58), "text"))
@@ -744,14 +744,9 @@ def github_rows(profile: Mapping[str, Any], stats: Mapping[str, Any], config: Ma
     ordered = sorted(language_weights.items(), key=lambda item: item[1], reverse=True)
     languages = " · ".join(name for name, _ in ordered[:top_count])
 
-    days = max(1, min(365, int(display.get("contributions_window_days") or 365)))
     rows = [
         (uptime_label, uptime_value, "success"),
         ("timezone", clean(timezone_value, 58), "text"),
-        ("public repos", format_number(profile.get("public_repos")), "text"),
-        ("stars earned", format_number(stats.get("stars")), "warning"),
-        ("followers", format_number(profile.get("followers")), "accent2"),
-        (f"contribs · {days}d", format_number(stats.get("contributions")), "success"),
         ("public languages", clean(languages, 58), "text"),
     ]
     return [(label, value, color) for label, value, color in rows if value]
@@ -937,13 +932,18 @@ def _normalize_readme_sync_stamp(markdown: str) -> str:
     return _README_SYNC_STAMP_RE.sub(r"\1__LAST_MEANINGFUL_UPDATE__", markdown, count=1)
 
 
-def _terminal_row(label: str, value: str, width: int = 74, label_width: int = 25) -> str:
+def _terminal_row_parts(label: str, value: str, width: int, label_width: int) -> tuple[str, str, str]:
     clean_label = clean(label, label_width)
     base = f"{clean_label}: "
     max_value = max(10, width - len(base) - 5)
     clean_value = clean(value, max_value)
-    dots = max(2, width - len(base) - len(clean_value) - 1)
-    return f"{base}{'.' * dots} {clean_value}"
+    dots = "." * max(2, width - len(base) - len(clean_value) - 1)
+    return base, dots, clean_value
+
+
+def _terminal_row(label: str, value: str, width: int = 74, label_width: int = 25) -> str:
+    base, dots, clean_value = _terminal_row_parts(label, value, width, label_width)
+    return f"{base}{dots} {clean_value}"
 
 
 def _section_header(title: str, width: int = 74) -> str:
@@ -994,6 +994,147 @@ def _ordered_sections(
     return ordered
 
 
+def _pick_rows(
+    rows: list[tuple[str, str, str]],
+    allowed_labels: set[str],
+) -> list[tuple[str, str, str]]:
+    if not allowed_labels:
+        return rows
+    return [entry for entry in rows if entry[0].strip().lower() in allowed_labels]
+
+
+def _fit_square_ascii_for_readme(
+    ascii_rows: list[str],
+    row_ratio: float,
+) -> list[str]:
+    if not ascii_rows:
+        return ascii_rows
+
+    width = max((len(row) for row in ascii_rows), default=0)
+    if width <= 0:
+        return ascii_rows
+
+    ratio = clamp(float(row_ratio), 0.42, 0.80)
+    target_rows = max(18, int(round(width * ratio)))
+    source_rows = [row.ljust(width) for row in ascii_rows]
+    source_count = len(source_rows)
+    if source_count <= 1 or source_count == target_rows:
+        return source_rows
+
+    output: list[str] = []
+    for index in range(target_rows):
+        source_index = round(index * (source_count - 1) / max(1, target_rows - 1))
+        output.append(source_rows[source_index])
+    return output
+
+
+def _plain(value: Any) -> str:
+    text = " ".join(str(value or "").split()).strip()
+    return text.replace("`", "")
+
+
+def _clip_no_ellipsis(text: str, width: int) -> str:
+    if width <= 0:
+        return ""
+    return text[:width]
+
+
+def _center_no_overflow(text: str, width: int) -> str:
+    clipped = _clip_no_ellipsis(_plain(text), width)
+    return clipped.center(width)
+
+
+def _split_top_skills(value: Any, limit: int = 4) -> str:
+    raw = _plain(value)
+    if not raw:
+        return ""
+    tokens = [token.strip() for token in re.split(r"\s*[·,|]\s*", raw) if token.strip()]
+    return " · ".join(tokens[: max(1, limit)])
+
+
+def _box_lines(lines: list[str], width: int, centered: bool = False) -> list[str]:
+    top = f"+{'-' * (width + 2)}+"
+    output = [top]
+    for line in lines:
+        if centered:
+            content = _center_no_overflow(line, width)
+        else:
+            content = _clip_no_ellipsis(str(line), width).ljust(width)
+        output.append(f"| {content} |")
+    output.append(top)
+    return output
+
+
+def _metadata_rows_for_readme(profile: Mapping[str, Any], stats: Mapping[str, Any], config: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
+    profile_config = config.get("profile") if isinstance(config.get("profile"), dict) else {}
+    sections_config = config.get("sections") if isinstance(config.get("sections"), dict) else {}
+    now_config = sections_config.get("now") if isinstance(sections_config.get("now"), dict) else {}
+    stack_config = sections_config.get("stack") if isinstance(sections_config.get("stack"), dict) else {}
+
+    uptime_config = config.get("uptime") if isinstance(config.get("uptime"), dict) else {}
+    local_zone = profile_timezone(config)
+    timezone_display = str(uptime_config.get("timezone_display") or getattr(local_zone, "key", "Eastern Time"))
+    _next_eta, next_at = _next_refresh(local_zone)
+    stats_source = clean(stats.get("source") or "live GitHub data", 40)
+
+    uptime_label = clean(uptime_config.get("label") or "human uptime", 22)
+    source = str(uptime_config.get("source") or "github_account").strip().lower()
+    precision = str(uptime_config.get("precision") or "days")
+    if source == "custom":
+        start_value = str(os.getenv("PROFILE_START_DATE") or uptime_config.get("start_date") or "").strip()
+    else:
+        start_value = str(profile.get("created_at") or "").strip()
+    try:
+        uptime_value = format_uptime(start_value, local_zone, precision)
+    except Exception:
+        uptime_value = "live sync pending"
+
+    curated = [
+        ("languages", _split_top_skills(stack_config.get("languages"), 4)),
+        ("frontend", _split_top_skills(stack_config.get("frontend"), 3)),
+        ("backend", _split_top_skills(stack_config.get("backend & data"), 3)),
+        ("devops", _split_top_skills(stack_config.get("testing & devops"), 3)),
+        ("cloud", _split_top_skills(stack_config.get("cloud/security/obs"), 3)),
+        ("analytics", _split_top_skills(stack_config.get("analytics"), 3)),
+    ]
+
+    live_language_weights = stats.get("language_weights") or {}
+    if isinstance(live_language_weights, dict) and live_language_weights:
+        live_languages = " · ".join(
+            name for name, _ in sorted(live_language_weights.items(), key=lambda item: item[1], reverse=True)[:4]
+        )
+    else:
+        live_languages = _split_top_skills(stack_config.get("languages"), 4)
+
+    profile_rows = [
+        f"handle: @{_plain(profile.get('login') or 'aerybyte')}",
+        f"role: {_plain(profile_config.get('role') or 'software engineer · product builder')}",
+    ]
+    now_rows = [
+        f"building: {_plain(now_config.get('building') or 'shipping product work')}",
+        f"learning: {_plain(now_config.get('learning') or 'architecture · product velocity')}",
+    ]
+    stack_rows = [f"{name}: {value}" for name, value in curated if value]
+    live_rows = [
+        f"{uptime_label}: {uptime_value}",
+        f"timezone: {format_timezone_value(local_zone, timezone_display)}",
+        f"languages: {live_languages}",
+    ]
+    automation_rows = [
+        f"data source: {stats_source}",
+        f"next refresh at: {next_at}",
+        f"refresh timezone: {timezone_display}",
+    ]
+
+    return [
+        ("profile", profile_rows),
+        ("now", now_rows),
+        ("top skills", stack_rows),
+        ("github live", live_rows),
+        ("automation", automation_rows),
+    ]
+
+
 def _terminal_info_lines(
     profile: Mapping[str, Any],
     stats: Mapping[str, Any],
@@ -1012,17 +1153,35 @@ def _terminal_info_lines(
         name.lower(): rows for name, rows in build_sections(profile, stats, config)
     }
 
+    compact_readme = bool(display.get("readme_compact", True))
+    if compact_readme:
+        section_map["profile"] = _pick_rows(section_map.get("profile", []), {"handle", "role"})
+        section_map["now"] = _pick_rows(section_map.get("now", []), {"building", "learning"})
+        section_map["stack"] = _pick_rows(
+            section_map.get("stack", []),
+            {
+                "languages",
+                "frontend",
+                "backend & data",
+                "testing & devops",
+                "cloud/security/obs",
+                "analytics",
+            },
+        )
+        section_map["github --live"] = _pick_rows(
+            section_map.get("github --live", []),
+            {"human uptime", "timezone", "public languages"},
+        )
+
     show_public_email = bool(display.get("show_public_email", False))
-    contact_rows: list[tuple[str, str, str]] = [
-        ("github", f"github.com/{clean(profile.get('login') or 'aerybyte', 36)}", "accent2"),
-        ("repositories", f"github.com/{clean(profile.get('login') or 'aerybyte', 36)}?tab=repositories", "text"),
-    ]
+    contact_rows: list[tuple[str, str, str]] = []
     blog = clean(profile.get("blog"), 50).removeprefix("https://").removeprefix("http://").rstrip("/")
     if blog:
         contact_rows.append(("website", blog, "text"))
     if show_public_email and profile.get("email"):
         contact_rows.append(("email", clean(profile.get("email"), 50), "warning"))
-    section_map["contact"] = contact_rows
+    if contact_rows:
+        section_map["contact"] = contact_rows
 
     days = max(1, min(365, int(display.get("contributions_window_days") or 365)))
     timezone_name = str(
@@ -1030,20 +1189,17 @@ def _terminal_info_lines(
         or getattr(local_zone, "key", "Eastern Time")
     )
     section_map["automation"] = [
-        ("refresh cron", "17 */6 * * *", "text"),
-        ("refresh timezone", timezone_name, "text"),
-        ("contrib window", f"{days} days", "text"),
         ("next refresh in", next_eta, "success"),
         ("next refresh at", next_at, "success"),
-        ("avatar pipeline", "github avatar -> color ASCII", "text"),
-        ("commit strategy", "changed files only", "text"),
+        ("refresh cron", "17 */6 * * *", "text"),
+        ("refresh timezone", timezone_name, "text"),
         ("last sync", refreshed, "text"),
     ]
 
     lines.append(_section_header(str(profile.get("login") or "aerybyte"), width=panel_width))
     for section_name, rows in _ordered_sections(section_map, config):
         lines.append(_section_header(section_name, width=panel_width))
-        for label, value, _ in rows:
+        for label, value, color_key in rows:
             lines.append(_terminal_row(label, value, width=panel_width, label_width=label_width))
     return lines
 
@@ -1054,44 +1210,56 @@ def render_readme(
     config: Mapping[str, Any],
     ascii_rows: list[str],
 ) -> str:
-    profile_name = clean(profile.get("name") or profile.get("login") or "aerybyte", 48)
-    login = clean(profile.get("login") or "aerybyte", 40)
     display = config.get("display") if isinstance(config.get("display"), dict) else {}
-    left_width = max(38, min(50, int(display.get("readme_ascii_column_width") or 44)))
-    right_width = max(50, min(62, int(display.get("readme_info_column_width") or 58)))
-    info_lines = _terminal_info_lines(profile, stats, config, panel_width=right_width, label_width=22)
-    merged: list[str] = []
-    total_lines = max(len(ascii_rows), len(info_lines))
-    top = f"+{'-' * (left_width + 2)}+{'-' * (right_width + 2)}+"
-    merged.append(top)
-    for index in range(total_lines):
-        left_raw = ascii_rows[index] if index < len(ascii_rows) else ""
-        right_raw = info_lines[index] if index < len(info_lines) else ""
-        left = left_raw[:left_width]
-        right = right_raw
-        merged.append(f"| {left.ljust(left_width)} | {right.ljust(right_width)} |")
-    merged.append(top)
-
-    terminal_block = "\n".join(merged).rstrip() + "\n"
-    local_zone = profile_timezone(config)
-    next_eta, next_at = _next_refresh(local_zone)
-    source = clean(stats.get("source") or "live GitHub data", 40)
-
-    status_block = "\n".join(
-        [
-            f"+ live source: {source}",
-            f"+ next refresh: {next_at} ({next_eta})",
-            "! timezone-aware cron: 17 */6 * * * (EST/EDT)",
-        ]
+    square_rows = _fit_square_ascii_for_readme(
+        ascii_rows,
+        float(display.get("readme_avatar_rows_ratio") or 0.56),
     )
+    intrinsic_left_width = max((len(row) for row in square_rows), default=44)
+    left_width = max(38, min(56, int(display.get("readme_ascii_column_width") or intrinsic_left_width)))
+    # keep one blank column against the right border to avoid visual artifacts
+    # where dense ascii can look like stray punctuation near the divider.
+    avatar_inner_width = max(1, left_width - 1)
+    avatar_lines = [row[:avatar_inner_width].ljust(avatar_inner_width) + " " for row in square_rows]
+    avatar_box_lines = _box_lines(avatar_lines, left_width, centered=False)
+
+    metadata_width = max(56, min(78, int(display.get("readme_info_column_width") or 64)))
+    metadata_sections = _metadata_rows_for_readme(profile, stats, config)
+    metadata_ini_lines: list[str] = []
+    divider = ("- " * (metadata_width // 2 + 2)).strip()[:metadata_width]
+    for index, (section_name, rows) in enumerate(metadata_sections):
+        safe_section = _plain(section_name)
+        metadata_ini_lines.append(f"[{safe_section}]")
+        for row in rows:
+            safe_row = _plain(row)
+            key, separator, value = safe_row.partition(":")
+            if separator:
+                metadata_ini_lines.append(f"{key.strip()} = {value.strip()}")
+            else:
+                metadata_ini_lines.append(f"item = {safe_row.strip()}")
+        if index < len(metadata_sections) - 1:
+            metadata_ini_lines.append(divider)
+    metadata_box_lines = _box_lines(metadata_ini_lines, metadata_width, centered=False)
+
+    if len(metadata_box_lines) < len(avatar_box_lines):
+        pad_count = len(avatar_box_lines) - len(metadata_box_lines)
+        empty_row = f"| {' ' * metadata_width} |"
+        metadata_box_lines = (
+            metadata_box_lines[:-1] + [empty_row] * pad_count + [metadata_box_lines[-1]]
+        )
+
+    combined_lines: list[str] = []
+    total_lines = max(len(avatar_box_lines), len(metadata_box_lines))
+    left_blank = " " * len(avatar_box_lines[0]) if avatar_box_lines else ""
+    right_blank = " " * len(metadata_box_lines[0]) if metadata_box_lines else ""
+    for index in range(total_lines):
+        left = avatar_box_lines[index] if index < len(avatar_box_lines) else left_blank
+        right = metadata_box_lines[index] if index < len(metadata_box_lines) else right_blank
+        combined_lines.append(f"{left}   {right}")
+    combined = "\n".join(combined_lines).replace("`", "")
 
     return (
-        f"# {profile_name}\n\n"
-        f"```text\n{terminal_block}```\n\n"
-        f"```diff\n{status_block}\n```\n\n"
-        "- dynamic profile: live public GitHub stats + avatar-to-ASCII renderer\n"
-        "- automation: cron every 6 hours in Eastern Time (EST/EDT aware)\n"
-        "- commit policy: push only when generated content actually changes\n\n"
+        f"```text\n{combined}\n```\n\n"
         "<!-- Generated by scripts/build_profile.py -->\n"
     )
 
