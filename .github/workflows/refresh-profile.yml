@@ -53,6 +53,9 @@ jobs:
       - name: Commit refreshed assets
         shell: bash
         run: |
+          # Rebase before staging so we work from the latest main tip.
+          git pull --rebase origin "${GITHUB_REF_NAME:-main}"
+
           git add \
             README.md \
             assets/avatar.png \
@@ -69,4 +72,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "chore: refresh profile card"
-          git push
+
+          # Handle race where another run pushed between pull and push.
+          if ! git push origin "HEAD:${GITHUB_REF_NAME:-main}"; then
+            git pull --rebase origin "${GITHUB_REF_NAME:-main}"
+            git push origin "HEAD:${GITHUB_REF_NAME:-main}"
+          fi

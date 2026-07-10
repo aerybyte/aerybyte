@@ -365,6 +365,7 @@ def fetch_commit_totals_from_contributors(
     """
     total_commits = 0
     has_data = False
+    found_user = False
     target = username.casefold()
 
     for repo_name in repo_names[:max_repos]:
@@ -394,9 +395,12 @@ def fetch_commit_totals_from_contributors(
             login = str(author.get("login") or "").strip().casefold()
             if login != target:
                 continue
+            found_user = True
             total_commits += int(contributor.get("total") or 0)
 
     if not has_data:
+        return None
+    if not found_user:
         return None
     return total_commits
 
@@ -407,7 +411,11 @@ def fetch_commit_totals_from_commits_api(
     token: str | None,
     max_repos: int = 24,
 ) -> int | None:
-    """Fallback commit count using commits pagination for the given author."""
+    """Fallback commit count using repository commits pagination.
+
+    This measures total commits in owned repositories, which is stable and
+    reliably updates even when author identity matching is inconsistent.
+    """
     total = 0
     has_data = False
 
@@ -415,7 +423,7 @@ def fetch_commit_totals_from_commits_api(
         response = requests.get(
             f"{API_ROOT}/repos/{username}/{repo_name}/commits",
             headers=headers(token),
-            params={"author": username, "per_page": 1},
+            params={"per_page": 1},
             timeout=30,
         )
 
