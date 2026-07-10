@@ -2016,6 +2016,10 @@ def main() -> int:
     is_scheduled_refresh = str(os.getenv("GITHUB_EVENT_NAME") or "").strip().lower() == "schedule"
     stats_cache_path = args.output_dir / "github-stats-cache.json"
     cached_stats = read_stats_cache(stats_cache_path)
+    cached_login = str(cached_stats.get("login") or "").strip()
+    if cached_login and cached_login.casefold() != username.casefold():
+        cached_stats = {}
+        stats_cache_path.unlink(missing_ok=True)
     if is_scheduled_refresh:
         cached_stats = {}
         stats_cache_path.unlink(missing_ok=True)
