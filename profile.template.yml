@@ -5,6 +5,10 @@
 # The workflow reads this template to build README.md and SVG assets.
 
 profile:
+  # Optional: set the GitHub account to sync stats/avatar from.
+  # Leave blank to use the repository owner.
+  github_username: ""
+
   # Your headline role text
   role: "software engineer · product builder"
 

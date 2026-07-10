@@ -21,7 +21,9 @@ import html
 import io
 import os
 import re
+import subprocess
 import sys
+import time
 import textwrap
 from collections import Counter, defaultdict
 from dataclasses import dataclass
@@ -39,6 +41,8 @@ GRAPHQL_URL = f"{API_ROOT}/graphql"
 API_VERSION = "2026-03-10"
 USER_AGENT = "aerybyte-dynamic-profile/1.0"
 ASCII_PALETTE = " .,:;irsXA253hMHGS#9B&@"
+STATS_MAX_ATTEMPTS = 8
+STATS_RETRY_DELAY_SECONDS = 2.0
 
 
 @dataclass(frozen=True)
@@ -203,6 +207,10 @@ def validate_config(config: Mapping[str, Any], config_path: Path) -> None:
         if not isinstance(additional_fields, dict):
             issues.append("profile.additional_fields must be a key/value mapping of text fields.")
 
+    github_username = profile_config.get("github_username")
+    if github_username is not None and not isinstance(github_username, str):
+        issues.append("profile.github_username must be text when provided.")
+
     source = str(uptime_config.get("source") or "github_account").strip().lower()
     if source not in {"custom", "github_account"}:
         notes.append(
@@ -325,11 +333,20 @@ def fetch_code_frequency_churn(
     has_data = False
 
     for repo_name in repo_names[:max_repos]:
-        response = requests.get(
-            f"{API_ROOT}/repos/{username}/{repo_name}/stats/code_frequency",
-            headers=headers(token),
-            timeout=30,
-        )
+        response: requests.Response | None = None
+        for attempt in range(STATS_MAX_ATTEMPTS):
+            response = requests.get(
+                f"{API_ROOT}/repos/{username}/{repo_name}/stats/code_frequency",
+                headers=headers(token),
+                timeout=30,
+            )
+            if response.status_code != 202:
+                break
+            if attempt < STATS_MAX_ATTEMPTS - 1:
+                time.sleep(STATS_RETRY_DELAY_SECONDS)
+
+        if response is None:
+            continue
 
         if response.status_code == 202:
             continue
@@ -353,6 +370,73 @@ def fetch_code_frequency_churn(
     return additions, deletions
 
 
+def fetch_churn_from_contributors(
+    username: str,
+    repo_names: list[str],
+    token: str | None,
+    max_repos: int = 24,
+) -> tuple[int | None, int | None]:
+    """Fallback churn from contributor weekly stats for the target user.
+
+    This endpoint can also return 202 while GitHub computes values, so we retry
+    a few times to improve odds of getting fresh data during scheduled runs.
+    """
+    additions = 0
+    deletions = 0
+    has_data = False
+    found_user = False
+    target = username.casefold()
+
+    for repo_name in repo_names[:max_repos]:
+        response: requests.Response | None = None
+        for attempt in range(STATS_MAX_ATTEMPTS):
+            response = requests.get(
+                f"{API_ROOT}/repos/{username}/{repo_name}/stats/contributors",
+                headers=headers(token),
+                timeout=30,
+            )
+            if response.status_code != 202:
+                break
+            if attempt < STATS_MAX_ATTEMPTS - 1:
+                time.sleep(STATS_RETRY_DELAY_SECONDS)
+
+        if response is None:
+            continue
+        if response.status_code == 202:
+            continue
+        if response.status_code in {403, 404, 451}:
+            continue
+
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, list):
+            continue
+
+        has_data = True
+        for contributor in payload:
+            if not isinstance(contributor, dict):
+                continue
+            author = contributor.get("author")
+            if not isinstance(author, dict):
+                continue
+            login = str(author.get("login") or "").strip().casefold()
+            if login != target:
+                continue
+            found_user = True
+            weeks = contributor.get("weeks")
+            if not isinstance(weeks, list):
+                continue
+            for week in weeks:
+                if not isinstance(week, dict):
+                    continue
+                additions += int(week.get("a") or 0)
+                deletions += int(week.get("d") or 0)
+
+    if not has_data or not found_user:
+        return None, None
+    return additions, deletions
+
+
 def fetch_commit_totals_from_contributors(
     username: str,
     repo_names: list[str],
@@ -369,11 +453,20 @@ def fetch_commit_totals_from_contributors(
     target = username.casefold()
 
     for repo_name in repo_names[:max_repos]:
-        response = requests.get(
-            f"{API_ROOT}/repos/{username}/{repo_name}/stats/contributors",
-            headers=headers(token),
-            timeout=30,
-        )
+        response: requests.Response | None = None
+        for attempt in range(STATS_MAX_ATTEMPTS):
+            response = requests.get(
+                f"{API_ROOT}/repos/{username}/{repo_name}/stats/contributors",
+                headers=headers(token),
+                timeout=30,
+            )
+            if response.status_code != 202:
+                break
+            if attempt < STATS_MAX_ATTEMPTS - 1:
+                time.sleep(STATS_RETRY_DELAY_SECONDS)
+
+        if response is None:
+            continue
 
         if response.status_code == 202:
             continue
@@ -449,6 +542,209 @@ def fetch_commit_totals_from_commits_api(
     if not has_data:
         return None
     return total
+
+
+def fetch_churn_from_compare_api(
+    username: str,
+    repo_names: list[str],
+    token: str | None,
+    max_repos: int = 12,
+) -> tuple[int | None, int | None]:
+    """Best-effort churn fallback using compare API from oldest commit to HEAD.
+
+    This avoids permanent `live sync pending` when async stats endpoints never
+    finish in time. It may undercount in very large repositories because GitHub
+    can truncate compare file lists.
+    """
+    additions = 0
+    deletions = 0
+    has_data = False
+
+    for repo_name in repo_names[:max_repos]:
+        repo_response = requests.get(
+            f"{API_ROOT}/repos/{username}/{repo_name}",
+            headers=headers(token),
+            timeout=30,
+        )
+        if repo_response.status_code in {403, 404, 451}:
+            continue
+        repo_response.raise_for_status()
+        repo_payload = repo_response.json()
+        if not isinstance(repo_payload, dict):
+            continue
+        default_branch = str(repo_payload.get("default_branch") or "main").strip()
+        if not default_branch:
+            continue
+
+        head_response = requests.get(
+            f"{API_ROOT}/repos/{username}/{repo_name}/commits",
+            headers=headers(token),
+            params={"per_page": 1},
+            timeout=30,
+        )
+        if head_response.status_code in {403, 404, 409, 451}:
+            continue
+        head_response.raise_for_status()
+        head_payload = head_response.json()
+        if not isinstance(head_payload, list) or not head_payload:
+            continue
+
+        link_header = str(head_response.headers.get("Link") or "")
+        last_page_match = re.search(r"[?&]page=(\d+)>;\s*rel=\"last\"", link_header)
+        last_page = int(last_page_match.group(1)) if last_page_match else 1
+
+        oldest_sha = ""
+        if last_page <= 1:
+            oldest_sha = str(head_payload[0].get("sha") or "").strip()
+        else:
+            oldest_response = requests.get(
+                f"{API_ROOT}/repos/{username}/{repo_name}/commits",
+                headers=headers(token),
+                params={"per_page": 1, "page": last_page},
+                timeout=30,
+            )
+            if oldest_response.status_code in {403, 404, 409, 451}:
+                continue
+            oldest_response.raise_for_status()
+            oldest_payload = oldest_response.json()
+            if isinstance(oldest_payload, list) and oldest_payload:
+                oldest_sha = str(oldest_payload[0].get("sha") or "").strip()
+
+        if not oldest_sha:
+            continue
+
+        compare_response = requests.get(
+            f"{API_ROOT}/repos/{username}/{repo_name}/compare/{oldest_sha}...{default_branch}",
+            headers=headers(token),
+            timeout=45,
+        )
+        if compare_response.status_code in {403, 404, 409, 422, 451}:
+            continue
+        compare_response.raise_for_status()
+        compare_payload = compare_response.json()
+        if not isinstance(compare_payload, dict):
+            continue
+        files = compare_payload.get("files")
+        if not isinstance(files, list):
+            continue
+
+        has_data = True
+        for changed_file in files:
+            if not isinstance(changed_file, dict):
+                continue
+            additions += int(changed_file.get("additions") or 0)
+            deletions += int(changed_file.get("deletions") or 0)
+
+    if not has_data:
+        return None, None
+    return additions, deletions
+
+
+def fetch_local_git_churn_if_single_repo(username: str, repo_names: list[str]) -> tuple[int | None, int | None]:
+    """Fallback churn from local git history when the profile has one owned repo.
+
+    This only applies when the current checkout matches the single discovered
+    repository, preventing accidental partial totals for multi-repo profiles.
+    """
+    if len(repo_names) != 1:
+        return None, None
+
+    repo_ref = str(os.getenv("GITHUB_REPOSITORY") or "").strip()
+    if not repo_ref or "/" not in repo_ref:
+        return None, None
+    owner, current_repo = repo_ref.split("/", 1)
+    if owner.casefold() != username.casefold():
+        return None, None
+    if current_repo.casefold() != repo_names[0].casefold():
+        return None, None
+
+    try:
+        result = subprocess.run(
+            ["git", "log", "--numstat", "--pretty=tformat:"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except Exception:
+        return None, None
+
+    additions = 0
+    deletions = 0
+    has_data = False
+    for line in result.stdout.splitlines():
+        parts = line.split("\t")
+        if len(parts) < 3:
+            continue
+        add_text, del_text = parts[0].strip(), parts[1].strip()
+        if not add_text.isdigit() or not del_text.isdigit():
+            continue
+        additions += int(add_text)
+        deletions += int(del_text)
+        has_data = True
+
+    if not has_data:
+        return None, None
+    return additions, deletions
+
+
+def fetch_local_git_stats(username: str) -> dict[str, Any] | None:
+    """Best-effort local fallback when GitHub API calls fail entirely."""
+    repo_ref = str(os.getenv("GITHUB_REPOSITORY") or "").strip()
+    if not repo_ref or "/" not in repo_ref:
+        return None
+    owner, _repo_name = repo_ref.split("/", 1)
+    if owner.casefold() != username.casefold():
+        return None
+
+    try:
+        commits_result = subprocess.run(
+            ["git", "rev-list", "--count", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        commits = int(commits_result.stdout.strip())
+    except Exception:
+        commits = None
+
+    additions = 0
+    deletions = 0
+    has_churn = False
+    try:
+        churn_result = subprocess.run(
+            ["git", "log", "--numstat", "--pretty=tformat:"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        for line in churn_result.stdout.splitlines():
+            parts = line.split("\t")
+            if len(parts) < 3:
+                continue
+            add_text, del_text = parts[0].strip(), parts[1].strip()
+            if not add_text.isdigit() or not del_text.isdigit():
+                continue
+            additions += int(add_text)
+            deletions += int(del_text)
+            has_churn = True
+    except Exception:
+        pass
+
+    if commits is None and not has_churn:
+        return None
+
+    return {
+        "stars": None,
+        "repo_count": 1,
+        "contributions": None,
+        "commits": commits,
+        "additions": additions if has_churn else None,
+        "deletions": deletions if has_churn else None,
+        "lines_of_code": None,
+        "includes_private": False,
+        "language_weights": {},
+        "source": "local git fallback",
+    }
 
 
 def fetch_graphql_stats(
@@ -544,6 +840,12 @@ def fetch_graphql_stats(
             break
 
     additions, deletions = fetch_code_frequency_churn(username, repo_names, token)
+    if additions is None or deletions is None:
+        additions, deletions = fetch_churn_from_contributors(username, repo_names, token)
+    if additions is None or deletions is None:
+        additions, deletions = fetch_churn_from_compare_api(username, repo_names, token)
+    if additions is None or deletions is None:
+        additions, deletions = fetch_local_git_churn_if_single_repo(username, repo_names)
     if commits is None:
         commits = fetch_commit_totals_from_contributors(username, repo_names, token)
     if commits is None:
@@ -601,6 +903,12 @@ def fetch_rest_repository_stats(
         page += 1
 
     additions, deletions = fetch_code_frequency_churn(username, repo_names, token)
+    if additions is None or deletions is None:
+        additions, deletions = fetch_churn_from_contributors(username, repo_names, token)
+    if additions is None or deletions is None:
+        additions, deletions = fetch_churn_from_compare_api(username, repo_names, token)
+    if additions is None or deletions is None:
+        additions, deletions = fetch_local_git_churn_if_single_repo(username, repo_names)
     commit_total = fetch_commit_totals_from_contributors(username, repo_names, token)
     if commit_total is None:
         commit_total = fetch_commit_totals_from_commits_api(username, repo_names, token)
@@ -637,6 +945,9 @@ def fetch_stats(
         return fetch_rest_repository_stats(username, token, excluded_languages)
     except Exception as exc:  # noqa: BLE001
         print(f"warning: repository stats unavailable; rendering partial data: {exc}", file=sys.stderr)
+        local_stats = fetch_local_git_stats(username)
+        if local_stats is not None:
+            return local_stats
         return {
             "stars": None,
             "repo_count": None,
@@ -1685,14 +1996,22 @@ def main() -> int:
         help="Template config path (defaults to profile.template.yml)",
     )
     parser.add_argument("--output-dir", type=Path, default=Path("assets"))
-    parser.add_argument("--username", default=os.getenv("GITHUB_USERNAME") or os.getenv("GITHUB_REPOSITORY_OWNER"))
+    parser.add_argument("--username")
     parser.add_argument("--avatar", type=Path, help="Optional local image for a preview or permanent override")
     parser.add_argument("--offline", action="store_true", help="Use bundled preview values and make no GitHub API calls")
     args = parser.parse_args()
 
     config = load_config(args.config)
     validate_config(config, args.config)
-    username = str(args.username or "aerybyte").strip()
+    profile_config = config.get("profile") if isinstance(config.get("profile"), dict) else {}
+    configured_username = str(profile_config.get("github_username") or "").strip()
+    username = str(
+        args.username
+        or os.getenv("GITHUB_USERNAME")
+        or configured_username
+        or os.getenv("GITHUB_REPOSITORY_OWNER")
+        or "aerybyte"
+    ).strip()
     token = os.getenv("GITHUB_TOKEN") or None
     is_scheduled_refresh = str(os.getenv("GITHUB_EVENT_NAME") or "").strip().lower() == "schedule"
     stats_cache_path = args.output_dir / "github-stats-cache.json"

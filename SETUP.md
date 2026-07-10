@@ -37,6 +37,7 @@ The cron workflow reads this template directly.
 
 Manual values (you edit in profile.template.yml):
 
+- profile.github_username (optional target account for live GitHub stats/avatar)
 - personal metadata: role, tagline, discord, email
 - extra personal metadata via profile.additional_fields (any key/value fields)
 - optional removal of built-in personal fields via profile.disabled_fields
@@ -97,6 +98,7 @@ On scheduled runs, stats cache is invalidated and refreshed live, then cache is 
 
 profile section:
 
+- github_username: optional account to sync stats/avatar from (leave blank to use repo owner)
 - role: main subtitle text
 - tagline: optional
 - discord and email: shown in contact section
@@ -136,9 +138,17 @@ Recommended GitHub Actions secret:
 
 Optional environment overrides supported by the script:
 
+- GITHUB_USERNAME (highest priority for target account)
 - PROFILE_TIMEZONE
 - PROFILE_DISCORD
 - PROFILE_EMAIL
+
+Target account resolution priority:
+
+- CLI --username
+- GITHUB_USERNAME environment variable
+- profile.github_username in profile.template.yml
+- repository owner (default)
 
 ## Workflow permissions
 

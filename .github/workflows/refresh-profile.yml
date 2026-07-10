@@ -45,7 +45,6 @@ jobs:
       - name: Rebuild profile card and ASCII portrait
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_USERNAME: ${{ github.repository_owner }}
           # Optional override. Leave unset to use start_date from profile.template.yml.
           PROFILE_START_DATE: ${{ secrets.PROFILE_START_DATE }}
         run: python scripts/build_profile.py --config profile.template.yml
