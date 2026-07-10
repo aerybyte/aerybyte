@@ -9,7 +9,7 @@
 | i:.GSSSSSSSGHShXr; ;5,s2ir35Xis3hMSGSMhMSSS  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
 | ::.2SSSSSSHs ,:ir;:,.....,.,;rsi:..ihGGGHSS  |   | [top skills]                                               |
 | ;;:ASSSSSSA ,;A533s;. ... ,iA2XsXi..XGGSSSS  |   | languages = Python · TypeScript · JavaScript · C#          |
-| ;:,XSSSSSG: ,AG3222i,s2s:.:XGArsXr; rHHGGGS  |   | frontend = React · Next.js · React Native                  |
+| ;:,XSSSSSG: ,AG3222i,s2s:.:XGArsXs; rHHGGGS  |   | frontend = React · Next.js · React Native                  |
 | i;i5SSSSSA  .ih3Mii:      ,XH2G2;r,    XSSG  |   | backend = Node.js · Supabase · PostgreSQL                  |
 | si:5SSSSS2   .:ii;,        :;X2Xi:     XSGG  |   | devops = Git · Docker · Kubernetes                         |
 | AAihSSSSSM    ..              ..       5SGS  |   | cloud = Render · Sentry integration · Cloudflare           |
@@ -19,7 +19,7 @@
 | SSSSSSSHHS; ::             ,,i;,..:.    ;3M  |   | repositories = 1                                           |
 | SSSSSGMGSSA.:                 :    ;.   s3h  |   | commits = 0                                                |
 | SSSSGMHSGGH:                  .:    ,  .Ahh  |   | + / - = +2,237 / -405                                      |
-| GHhHh33222X2;                   ,  ,. rh33H  |   | lines of code = 9,432                                      |
+| GHhHh33222X2;                   ,  ,. rh33H  |   | lines of code = 1,761                                      |
 | Hh55AAsrrrsir;   .               .,. ih25MG  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
 | AAXssri;:.... ,::                 ,AM32MHGG  |   | [contact]                                                  |
 | XXXX;;:,..      .::,          .;s2HHM53hHGS  |   | discord = @aeiree                                          |
