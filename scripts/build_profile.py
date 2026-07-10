@@ -339,7 +339,7 @@ def fetch_rest_repository_stats(
         "stars": stars,
         "contributions": None,
         "language_weights": dict(language_weights),
-        "source": "GitHub REST fallback",
+        "source": "GitHub REST API",
     }
 
 
@@ -354,6 +354,9 @@ def fetch_stats(
             return fetch_graphql_stats(username, token, days, excluded_languages)
         except Exception as exc:  # noqa: BLE001 - the REST fallback is intentional.
             print(f"warning: GraphQL stats failed; using REST fallback: {exc}", file=sys.stderr)
+            rest = fetch_rest_repository_stats(username, token, excluded_languages)
+            rest["source"] = "GitHub REST fallback"
+            return rest
     try:
         return fetch_rest_repository_stats(username, token, excluded_languages)
     except Exception as exc:  # noqa: BLE001
@@ -952,7 +955,7 @@ def _section_header(title: str, width: int = 74) -> str:
     return f"{heading} {'-' * suffix}"
 
 
-def _next_refresh(local_zone: ZoneInfo, minute: int = 17, hour_step: int = 6) -> tuple[str, str]:
+def _next_refresh(local_zone: ZoneInfo, minute: int = 0, hour_step: int = 6) -> tuple[str, str]:
     now = datetime.now(local_zone).replace(second=0, microsecond=0)
     candidate = now.replace(minute=minute)
     if now.minute > minute:
@@ -1191,7 +1194,7 @@ def _terminal_info_lines(
     section_map["automation"] = [
         ("next refresh in", next_eta, "success"),
         ("next refresh at", next_at, "success"),
-        ("refresh cron", "17 */6 * * *", "text"),
+        ("refresh cron", "0 */6 * * *", "text"),
         ("refresh timezone", timezone_name, "text"),
         ("last sync", refreshed, "text"),
     ]

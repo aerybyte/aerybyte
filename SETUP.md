@@ -11,7 +11,7 @@ ASCII portrait rebuilt from the current GitHub profile picture.
 - timezone: `America/New_York`
 - timezone display: `Eastern Time · EST/EDT · UTC offset`
 - profile-picture source: the current `@aerybyte` GitHub avatar
-- automatic cadence: every six hours at `:17` Eastern Time
+- automatic cadence: every six hours on the hour Eastern Time
 - themes: automatic dark and light SVGs
 
 The exact date is stored in `profile.yml`, so it will be public in the profile
@@ -25,11 +25,11 @@ The scheduled workflow is `.github/workflows/refresh-profile.yml`:
 
 ```yaml
 schedule:
-  - cron: "17 */6 * * *"
+  - cron: "0 */6 * * *"
     timezone: "America/New_York"
 ```
 
-It runs at **12:17 AM, 6:17 AM, 12:17 PM, and 6:17 PM Eastern Time**. The IANA
+It runs at **12:00 AM, 6:00 AM, 12:00 PM, and 6:00 PM Eastern Time**. The IANA
 zone follows daylight-saving time, so GitHub schedules it in EST during winter
 and EDT during summer. The midnight run advances human uptime on the correct
 local calendar date.

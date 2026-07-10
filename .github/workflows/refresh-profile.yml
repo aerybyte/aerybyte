@@ -3,9 +3,9 @@ name: Refresh profile card
 "on":
   workflow_dispatch:
   schedule:
-    # 00:17, 06:17, 12:17, and 18:17 Eastern Time.
+    # 00:00, 06:00, 12:00, and 18:00 Eastern Time.
     # The IANA timezone keeps the schedule aligned through EST and EDT.
-    - cron: "17 */6 * * *"
+    - cron: "0 */6 * * *"
       timezone: "America/New_York"
   push:
     paths:

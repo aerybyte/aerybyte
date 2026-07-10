@@ -14,16 +14,16 @@
 | ::isriisi  ,s332s, .. ;5HM52r,;rAs;irs5AXXX  |   | backend = Node.js · Supabase · PostgreSQL                  |
 | :,;sAXiXX  :s,;,   .   :sAX;. :iAsrAXr5Xsss  |   | devops = Git · Docker · Kubernetes                         |
 | ::sAXsA2sXXr;:,.,;ii;.    .Ar;r2risriiAssXX  |   | cloud = Render · Sentry integration · Cloudflare           |
-| :::rrXXAs;;..,,:,.  ,;;::;;iis2XXsAsi;Assss  |   | analytics = Power BI · data scraping · data analysis       |
+| :::rrXXAs;;..,,:,.  ,;;::;;irs2XXsAsi;Assss  |   | analytics = Power BI · data scraping · data analysis       |
 | :,:ss2X5X  .,.             .iXsrssXXri2ssss  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-| iirsXsrsr;                  ,;ii;sii;2sssss  |   | [github live]                                              |
+| iirsXsrsr;                  ,;ii;sii;2ssssX  |   | [github live]                                              |
 | iiirXsrrs:i                 ,;i;ir;;sAssrss  |   | human uptime = 21 years, 11 months, 27 days                |
 | ::iis;;:ii,i               .,i;rr;;rArssrr;  |   | timezone = Eastern Time · EDT · UTC-04:00                  |
 | :;::::::;:ii,;:          .,;iii;rAAssr;:;;:  |   | languages = Python                                         |
 | ;:::::::;:,;riir;       .,irrrsA2Xri;:::;::  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
 | :::::::;:::::,,;,r;;rrrsr2XXXrii:,:::::;:::  |   | [automation]                                               |
-| ::::::;:::::::;:,;s.X2.;22sr;::;:::::::;:::  |   | data source = GitHub GraphQL                               |
-| :,,::;::::::::;::,isrissX;:::,;:::::::;::::  |   | next refresh at = 2026-07-10 12:17 EDT                     |
+| ::::::;:::::::;:,;s.X2.;22sr;::;:::::::;:::  |   | data source = GitHub REST API                              |
+| :,,::;::::::::;::,isrissX;:::,;:::::::;::::  |   | next refresh at = 2026-07-10 18:00 EDT                     |
 |   r,;::::::::;:::::::;:::::::;:::::::;:::::  |   | refresh timezone = Eastern Time                            |
 |    ;;:::::::;:::::::;::::::::;:::::::;:::;,  |   |                                                            |
 +----------------------------------------------+   +------------------------------------------------------------+
