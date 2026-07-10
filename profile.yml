@@ -33,6 +33,13 @@ display:
     - HTML
     - CSS
   contributions_window_days: 365
+  readme_section_order:
+    - profile
+    - now
+    - stack
+    - github --live
+    - contact
+    - automation
   show_public_email: false
 
   # Blank = fetch the current GitHub profile picture on every scheduled run.

@@ -54,6 +54,7 @@ jobs:
         shell: bash
         run: |
           git add \
+            README.md \
             assets/avatar.png \
             assets/avatar-ascii.txt \
             assets/profile-terminal-dark.svg \

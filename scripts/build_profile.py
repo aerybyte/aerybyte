@@ -2,6 +2,7 @@
 """Build a dynamic, terminal-style GitHub profile card.
 
 Outputs:
+    README.md
   assets/profile-terminal-dark.svg
   assets/profile-terminal-light.svg
   assets/avatar-ascii.txt
@@ -923,11 +924,154 @@ def render_svg(
 
 
 _REFRESHED_STAMP_RE = re.compile(r"(>refreshed )[^<]+?( · )", re.IGNORECASE)
+_README_SYNC_STAMP_RE = re.compile(r"(last sync: )(.+)", re.IGNORECASE)
 
 
 def _normalize_svg_refresh_stamp(svg: str) -> str:
     """Ignore only the volatile footer timestamp during change detection."""
     return _REFRESHED_STAMP_RE.sub(r"\1__LAST_MEANINGFUL_UPDATE__\2", svg, count=1)
+
+
+def _normalize_readme_sync_stamp(markdown: str) -> str:
+    """Ignore only the volatile sync stamp during change detection."""
+    return _README_SYNC_STAMP_RE.sub(r"\1__LAST_MEANINGFUL_UPDATE__", markdown, count=1)
+
+
+def _terminal_row(label: str, value: str, width: int = 74, label_width: int = 25) -> str:
+    clean_label = clean(label, label_width)
+    clean_value = clean(value, 50)
+    base = f"{clean_label}: "
+    dots = max(2, width - len(base) - len(clean_value) - 1)
+    return f"{base}{'.' * dots} {clean_value}"
+
+
+def _section_header(title: str, width: int = 74) -> str:
+    heading = clean(title, 28).lower()
+    suffix = max(2, width - len(heading) - 1)
+    return f"{heading} {'-' * suffix}"
+
+
+def _next_refresh(local_zone: ZoneInfo, minute: int = 17, hour_step: int = 6) -> tuple[str, str]:
+    now = datetime.now(local_zone).replace(second=0, microsecond=0)
+    candidate = now.replace(minute=minute)
+    if now.minute > minute:
+        candidate = candidate + timedelta(hours=1)
+
+    while candidate <= now or candidate.hour % hour_step != 0:
+        candidate = candidate + timedelta(hours=1)
+
+    delta = candidate - now
+    total_minutes = max(0, int(delta.total_seconds() // 60))
+    hours, minutes = divmod(total_minutes, 60)
+    eta = f"{hours}h {minutes}m"
+    when = candidate.strftime("%Y-%m-%d %H:%M %Z")
+    return eta, when
+
+
+def _ordered_sections(
+    section_map: Mapping[str, list[tuple[str, str, str]]],
+    config: Mapping[str, Any],
+) -> list[tuple[str, list[tuple[str, str, str]]]]:
+    display = config.get("display") if isinstance(config.get("display"), dict) else {}
+    configured = display.get("readme_section_order")
+
+    if isinstance(configured, list):
+        preferred = [str(item).strip().lower() for item in configured if str(item).strip()]
+    else:
+        preferred = ["profile", "now", "stack", "github --live", "contact", "automation"]
+
+    ordered: list[tuple[str, list[tuple[str, str, str]]]] = []
+    seen: set[str] = set()
+    for key in preferred:
+        if key in section_map and key not in seen:
+            ordered.append((key, section_map[key]))
+            seen.add(key)
+
+    for key, rows in section_map.items():
+        if key not in seen:
+            ordered.append((key, rows))
+    return ordered
+
+
+def _terminal_info_lines(
+    profile: Mapping[str, Any],
+    stats: Mapping[str, Any],
+    config: Mapping[str, Any],
+) -> list[str]:
+    display = config.get("display") if isinstance(config.get("display"), dict) else {}
+    uptime_config = config.get("uptime") if isinstance(config.get("uptime"), dict) else {}
+    local_zone = profile_timezone(config)
+    refreshed = datetime.now(local_zone).strftime("%Y-%m-%d %H:%M %Z")
+    next_eta, next_at = _next_refresh(local_zone)
+
+    lines: list[str] = []
+    section_map: dict[str, list[tuple[str, str, str]]] = {
+        name.lower(): rows for name, rows in build_sections(profile, stats, config)
+    }
+
+    show_public_email = bool(display.get("show_public_email", False))
+    contact_rows: list[tuple[str, str, str]] = [
+        ("github", f"github.com/{clean(profile.get('login') or 'aerybyte', 36)}", "accent2"),
+        ("repositories", f"github.com/{clean(profile.get('login') or 'aerybyte', 36)}?tab=repositories", "text"),
+    ]
+    blog = clean(profile.get("blog"), 50).removeprefix("https://").removeprefix("http://").rstrip("/")
+    if blog:
+        contact_rows.append(("website", blog, "text"))
+    if show_public_email and profile.get("email"):
+        contact_rows.append(("email", clean(profile.get("email"), 50), "warning"))
+    section_map["contact"] = contact_rows
+
+    days = max(1, min(365, int(display.get("contributions_window_days") or 365)))
+    timezone_name = str(
+        uptime_config.get("timezone_display")
+        or getattr(local_zone, "key", "Eastern Time")
+    )
+    section_map["automation"] = [
+        ("refresh cron", "17 */6 * * *", "text"),
+        ("refresh timezone", timezone_name, "text"),
+        ("contrib window", f"{days} days", "text"),
+        ("next refresh in", next_eta, "success"),
+        ("next refresh at", next_at, "success"),
+        ("avatar pipeline", "github avatar -> color ASCII", "text"),
+        ("commit strategy", "changed files only", "text"),
+        ("last sync", refreshed, "text"),
+    ]
+
+    lines.append(_section_header(str(profile.get("login") or "aerybyte"), width=68))
+    for section_name, rows in _ordered_sections(section_map, config):
+        lines.append(_section_header(section_name, width=68))
+        for label, value, _ in rows:
+            lines.append(_terminal_row(label, value, width=68, label_width=21))
+    return lines
+
+
+def render_readme(
+    profile: Mapping[str, Any],
+    stats: Mapping[str, Any],
+    config: Mapping[str, Any],
+    ascii_rows: list[str],
+) -> str:
+    profile_name = clean(profile.get("name") or profile.get("login") or "aerybyte", 48)
+    login = clean(profile.get("login") or "aerybyte", 40)
+    info_lines = _terminal_info_lines(profile, stats, config)
+
+    left_width = max(44, min(60, max((len(row) for row in ascii_rows), default=44)))
+    merged: list[str] = []
+    total_lines = max(len(ascii_rows), len(info_lines))
+    for index in range(total_lines):
+        left = ascii_rows[index] if index < len(ascii_rows) else ""
+        right = info_lines[index] if index < len(info_lines) else ""
+        merged.append(f"{left.ljust(left_width)}   {right}".rstrip())
+
+    terminal_block = "\n".join(merged).rstrip() + "\n"
+    return (
+        f"# {profile_name}\n\n"
+        f"```text\n{terminal_block}```\n\n"
+        "- dynamic profile: live public GitHub stats + avatar-to-ASCII renderer\n"
+        "- automation: cron every 6 hours in Eastern Time (EST/EDT aware)\n"
+        "- commit policy: push only when generated content actually changes\n\n"
+        "<!-- Generated by scripts/build_profile.py -->\n"
+    )
 
 
 def write_text_if_changed(path: Path, content: str) -> bool:
@@ -943,6 +1087,16 @@ def write_svg_if_meaningfully_changed(path: Path, content: str) -> bool:
     if path.exists():
         existing = path.read_text(encoding="utf-8")
         if _normalize_svg_refresh_stamp(existing) == _normalize_svg_refresh_stamp(content):
+            return False
+    path.write_text(content, encoding="utf-8")
+    return True
+
+
+def write_readme_if_meaningfully_changed(path: Path, content: str) -> bool:
+    """Preserve the previous sync stamp when nothing else changed."""
+    if path.exists():
+        existing = path.read_text(encoding="utf-8")
+        if _normalize_readme_sync_stamp(existing) == _normalize_readme_sync_stamp(content):
             return False
     path.write_text(content, encoding="utf-8")
     return True
@@ -1000,6 +1154,7 @@ def main() -> int:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     dark_svg = render_svg(DARK, profile, stats, config, cells, max(30, min(58, ascii_width)))
     light_svg = render_svg(LIGHT, profile, stats, config, cells, max(30, min(58, ascii_width)))
+    readme = render_readme(profile, stats, config, rows)
 
     dark_changed = write_svg_if_meaningfully_changed(
         args.output_dir / "profile-terminal-dark.svg", dark_svg
@@ -1010,8 +1165,9 @@ def main() -> int:
     ascii_changed = write_text_if_changed(
         args.output_dir / "avatar-ascii.txt", "\n".join(rows) + "\n"
     )
+    readme_changed = write_readme_if_meaningfully_changed(Path("README.md"), readme)
 
-    changed = dark_changed or light_changed or ascii_changed
+    changed = dark_changed or light_changed or ascii_changed or readme_changed
     state = "updated" if changed else "already current"
     print(f"Profile card for @{profile.get('login', username)} is {state} in {args.output_dir}")
     return 0
