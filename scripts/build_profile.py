@@ -974,6 +974,13 @@ def read_stats_cache(path: Path) -> dict[str, Any]:
 def merge_stats_with_cache(stats: Mapping[str, Any], cached: Mapping[str, Any]) -> dict[str, Any]:
     merged = dict(stats)
     cached_stats = cached.get("stats") if isinstance(cached.get("stats"), dict) else {}
+
+    def numeric_or_none(value: Any) -> int | None:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
     for key in (
         "repo_count",
         "contributions",
@@ -983,8 +990,9 @@ def merge_stats_with_cache(stats: Mapping[str, Any], cached: Mapping[str, Any]) 
         "lines_of_code",
         "stars",
     ):
-        if merged.get(key) is None and cached_stats.get(key) is not None:
-            merged[key] = cached_stats.get(key)
+        cached_value = numeric_or_none(cached_stats.get(key))
+        if merged.get(key) is None and cached_value is not None:
+            merged[key] = cached_value
     if not merged.get("language_weights") and cached_stats.get("language_weights"):
         merged["language_weights"] = cached_stats.get("language_weights")
     if merged.get("source") in {None, "", "live sync pending"} and cached_stats.get("source"):
@@ -993,18 +1001,24 @@ def merge_stats_with_cache(stats: Mapping[str, Any], cached: Mapping[str, Any]) 
 
 
 def write_stats_cache(path: Path, username: str, stats: Mapping[str, Any]) -> bool:
+    def numeric_or_none(value: Any) -> int | None:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "login": username,
         "updated_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "stats": {
-            "repo_count": stats.get("repo_count"),
-            "contributions": stats.get("contributions"),
-            "commits": stats.get("commits"),
-            "additions": stats.get("additions"),
-            "deletions": stats.get("deletions"),
-            "lines_of_code": stats.get("lines_of_code"),
-            "stars": stats.get("stars"),
+            "repo_count": numeric_or_none(stats.get("repo_count")),
+            "contributions": numeric_or_none(stats.get("contributions")),
+            "commits": numeric_or_none(stats.get("commits")),
+            "additions": numeric_or_none(stats.get("additions")),
+            "deletions": numeric_or_none(stats.get("deletions")),
+            "lines_of_code": numeric_or_none(stats.get("lines_of_code")),
+            "stars": numeric_or_none(stats.get("stars")),
             "includes_private": stats.get("includes_private"),
             "language_weights": stats.get("language_weights") or {},
             "source": stats.get("source"),
@@ -1318,9 +1332,9 @@ def offline_fixture(username: str, config: Mapping[str, Any]) -> tuple[dict[str,
             "avatar_url": "",
         },
         {
-            "stars": preview.get("stars", "live on first run"),
-            "contributions": "live on first run",
-            "commits": "live on first run",
+            "stars": preview.get("stars") if preview.get("stars") is not None else None,
+            "contributions": None,
+            "commits": None,
             "additions": None,
             "deletions": None,
             "language_weights": {},
@@ -1431,7 +1445,7 @@ def build_sections(
 ) -> list[tuple[str, list[tuple[str, str, str]]]]:
     result = [("personal", profile_rows(profile, config))]
     result.extend(custom_sections(config))
-    result.append(("github stats", github_rows(profile, stats, config)))
+    result.append(("public github stats", github_rows(profile, stats, config)))
     return [(name, rows) for name, rows in result if rows]
 
 
@@ -1654,9 +1668,12 @@ def _ordered_sections(
             label = str(item).strip().lower()
             if not label:
                 continue
-            preferred.append("personal" if label == "profile" else label)
+            normalized = "personal" if label == "profile" else label
+            if normalized == "github stats":
+                normalized = "public github stats"
+            preferred.append(normalized)
     else:
-        preferred = ["personal", "top skills", "github stats", "contact"]
+        preferred = ["personal", "top skills", "public github stats", "contact"]
 
     ordered: list[tuple[str, list[tuple[str, str, str]]]] = []
     seen: set[str] = set()
@@ -1821,7 +1838,7 @@ def _metadata_rows_for_readme(profile: Mapping[str, Any], stats: Mapping[str, An
     output = [
         ("personal", profile_rows),
         ("top skills", skills_rows),
-        ("github stats", live_rows),
+        ("public github stats", live_rows),
     ]
     if contact_rows:
         output.append(("contact", contact_rows))
@@ -1862,6 +1879,10 @@ def _terminal_info_lines(
         )
         section_map["github stats"] = _pick_rows(
             section_map.get("github stats", []),
+            {"repositories", "commits", "+ / -", "lines of code", "scope"},
+        )
+        section_map["public github stats"] = _pick_rows(
+            section_map.get("public github stats", section_map.get("github stats", [])),
             {"repositories", "commits", "+ / -", "lines of code", "scope"},
         )
 

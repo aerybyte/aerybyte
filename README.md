@@ -15,17 +15,17 @@
 | AA  .5 .;Ahsr3;5r;;sX ..   55  Xr;;;;;5 s;i  |   | cloud = Render · Sentry integration · Cloudflare           |
 | X    X. 3X h;A5 5si5        ,: iX:;;:3; rr   |   | analytics = Power BI · data scraping · data analysis       |
 |      s.;5X,;;XM ;h2; ..         2Xrr22 .s;   |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-|      r,5s5; ;XM                 i5552. ,A:   |   | [github stats]                                             |
+|      r,5s5; ;XM                 i5552. ,A:   |   | [public github stats]                                      |
 |       3sX3r :;A3,                      r3    |   | repositories = 1                                           |
-|       ;.25r .;r23A;     ,,           :sHA    |   | commits = 14                                               |
-|         52r  ,rA;X22r:.          ,;rAXiXs .  |   | + / - = +1,570 / -307                                      |
-|         ;hs ,:.AirXr:.;XXXM552Ai.      A, r  |   | lines of code = 2,060                                      |
+|       ;.25r .;r23A;     ,,           :sHA    |   | commits = live sync pending                                |
+|         52r  ,rA;X22r:.          ,;rAXiXs .  |   | + / - = live sync pending                                  |
+|         ;hs ,:.AirXr:.;XXXM552Ai.      A, r  |   | lines of code = 16,923                                     |
 |         .35 ,r r2r.  .Asrss,.         .A  r  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
 |          ,Hr r: Mr                    i: .i  |   | [contact]                                                  |
 |           25 .s 5A.                   s. rs  |   | discord = @aeiree                                          |
 |           :M. r,sAX                  .s  hi  |   | email = erireilly9@gmail.com                               |
 |           si5. XX3 ,                 s. 22s  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-|           s,rs i5As  .;;::,,,,:,.   .s i2i2  |   | next refresh at = 2026-07-10 18:00 EDT                     |
+|           s,rs i5As  .;;::,,,,:,.   .s r2i2  |   | next refresh at = 2026-07-10 18:00 EDT                     |
 +----------------------------------------------+   +------------------------------------------------------------+
 ```
 
