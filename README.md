@@ -7,39 +7,39 @@
  iiiiiiriiirrrrrrrr22Asssrrsrrrririrriiir3A33XX2riiir    role: ............... software engineer · product builder · systems…
 iiriiiiiiiiirrrrrrX2AXssrrssrriiiiiriii;XGMMhhG3Xiirsr   tagline: ............. simple on the surface · thoughtful underneath
 irriiiiiiiiirrrrrX5AXsssrrsiirri;;rriii;55shAAhHXrisri   now ----------------------------------------------------------------
-;rriiiiiiiiirrrrAXX2XrrssA252X2XsXsiiii2H5MG2As2Aiirii   building: .................................... ATP — Around The Post
+;rriiiiiiiiirrrrAsX2XrrssA252X2XsXsiiii2H5MG2As2Aiirii   building: .................................... ATP — Around The Post
 ;riiiiiiiiiiiriAi r;AX2h3HHHAr;.3hh3AiX5i3ShhH5AAiriii   product: .................. a social app for better pickleball games
 :iiiiiiiiiiiriXr  ii.XHH3MGX.s. i3MMM3325ShA2hH3Xrriii   learning: .............. scalable architecture · mobile-first design
-:iriiriiiiiiirX  ,si.s53h5h;.2r .5H5hhh3MHh3sr55sriiii   exploring: ........... developer tools · automation loops · clean UX
-:iiririiiiiiiX,  ,,.:h:A3,32.::..rhHHhhM5s533r2Asriiii   stack --------------------------------------------------------------
+:iriiriiiiiiirX  ,si.s5hh5h;.2r .5H5hhh3MHh3sr55sriiii   exploring: ........... developer tools · automation loops · clean UX
+:iiririiiiiiiX,  ,,.:h:A3,52.::..rhMHhhM5s533r2Asriiii   stack --------------------------------------------------------------
 :;iriiiiiiiis2r,.,,,,A,Xs,3:...,;XhHhMM3h5r2325Xsiiiii   client: .......................... TypeScript · React · React Native
 :;rririiiiiiAr,.,,...,,;::i.,,..:r5hMMHHhM5;A3AAXriiii   web: ....................................................... Next.js
 ::riiriiiiiXi ,isir;.,.,,...,,:,.,;XhMGHhAh55AA2AXsrri   backend: ......................................... Python · Postgres
-::rriiiiiiXr.:s2M3h2i.,,,,.iXr2si,:iX523hXshAAA2AXXsrr   github --live ------------------------------------------------------
+::iriiiiiiXr.:s2M3h2i.,,,,.iXr2si,:iX523hXshAAA2AXXsrr   github --live ------------------------------------------------------
 ::irirriirX,.rXSSSShX,.,,.i2GGShsr,;rAXsh2rA5A2AAAXXss   human uptime: ......................... 21 years, 11 months, 27 days
 :,irrrriiX; .i5GHSGhs,.,,,sMSSSS5r;:rs2rXssr3A2AAXXXXX   timezone: ........................... Eastern Time · EDT · UTC-04:00
-:,;ririiiA.  rsMG53Ai  .  sMMGMh3r;:rs2rrrir25AAAAXXsX   public repos: .................................................... 1
+:,;ririiiA.  rsMG53Ai  .  sMMGMh3r;:rs2rrrir25AAAAXXsX   public repos: .................................................... 0
 ::;rXriiiA.   sX52Xi   ,  :AhH32si.:rr2i;issA5XXXXXssX   stars earned: .................................................... 0
-:::rsAXrr3,  ;X,,,.   ..   ,isXr:  .;r2ssAAiX5sssssssX   followers: ....................................... live on first run
-::;riirX23Ais3;       s:        ;;;rs52XXri;s2ssXXXsXX   contribs · 365d: ................................. live on first run
+:::rsAXrr3,  ;X,,,.   ..   ,isXr:  .;r2rsAAiX5sssssssX   followers: ....................................................... 0
+::;riirX23Ais3;       s:        ;;;rs52XXri;s2ssXXXsXX   contribs · 365d: ............................................... 385
 :,rAXssX2AsAsXi,.  .:irr,      .5r;;AA;;rri;s2ssXXXsXs   contact ------------------------------------------------------------
 ::,issA2XA;sr..;;;;;:. .ii:,,:;sXirA5XXs2si;i2ssssssXs   github: ........................................ github.com/aerybyte
 :::;iiAXAh:  ,.           ,::,, .rXAssssAXs;r2rssssXsr   repositories: ................. github.com/aerybyte?tab=repositories
 ;:,rA22XX5.   .,,.             .:;iiirssXri;XArsssXsii   automation ---------------------------------------------------------
-srr;sAsrrXr                     .,:;;;:riii;2sssssXsii   refresh cron: ......................................... 17 */6 * * *
+rri;sAsrrXr                     .,:;;;:riii;2sssssXsii   refresh cron: ......................................... 17 */6 * * *
 iirrXXsrrX;;                     :;;i;isii;s2rssrsXi;:   refresh timezone: ..................................... Eastern Time
 iii;sXsriX:;;                    ,;i;;ri;;i2ssrrrsi:::   contrib window: ........................................... 365 days
 ::;isXi;::X.i;                  .,;;;ri;;;2Xsssrsr::::   next refresh in: ............................................ 1h 29m
 :,;::::::,;X ;i                 .:i;rr;;i2Xrrrr;;:::::   next refresh at: .............................. 2026-07-10 12:17 EDT
 ::;::::::::iX,,i,             ..:;iri;;r2Xrssi;:;:::::   avatar pipeline: ...................... github avatar -> color ASCII
 :;::::::::;,:si,;;.         . .;iri;is22srri;:,;;::::;   commit strategy: ................................ changed files only
-;::::::::;:::,isrrsi..     ..:;srrsA22Xrii:,:::;::::::   last sync: .................................... 2026-07-10 10:48 EDT
-;:::::::;;::::,,;isXr:;:,:;;rrsA22AXssi;:,:::,;;::::;.
+;::::::::;:::,isrrsi..     ..:;rrrsA22Xrii:,:::;::::::   last sync: .................................... 2026-07-10 10:48 EDT
+;:::::::;;::::,,;isXr:;:,:;;rrsA22AXssi;:,::::;;::::;.
 ::::::::;:::::::,:;,ri,srrssiX2sXsrri;,:::::::;::::::.
 :::::::;:::::::::;:::X :5X.is3XXsi;:;::::::::;;,:::;.,
 :::::::;::::::::;;::,srsXXii5Xi;::,:;::::::::;::::::.,
  ,;:::;:::::::::;:::::ii,:rri::::::;::::::::;;,:::;.,
- 3H;,;;::::::::;::::::,,:;,,,::::::;::::::::;::::::,,
+ 3M;,;;::::::::;::::::,,:;,,,::::::;::::::::;::::::,,
   i::;:::::::::;::::::::;;::::::::;:::::::::;,:::;,,
     ;:::::::::;:::::::::;:::::::::;::::::::i::::;:
 ```
