@@ -17,15 +17,15 @@
 |      s.;5X,;;XM ;h2; ..         2Xrr22 .s;   |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
 |      r,5s5; ;XM                 i5552. ,A:   |   | [public github stats]                                      |
 |       3sX3r :;A3,                      r3    |   | repositories = 1                                           |
-|       ;.25r .;r23A;     ,,           :sHA    |   | commits = live sync pending                                |
-|         52r  ,rA;X22r:.          ,;rAXiXs .  |   | + / - = live sync pending                                  |
-|         ;hs ,:.AirXr:.;XXXM552Ai.      A, r  |   | lines of code = 16,923                                     |
+|       ;.25r .;r23A;     ,,           :sHA    |   | commits = 16                                               |
+|         52r  ,rA;X22r:.          ,;rAXiXs .  |   | + / - = +1,593 / -309                                      |
+|         ;hs ,:.AirXr:.;XXXM552Ai.      A, r  |   | lines of code = 2,088                                      |
 |         .35 ,r r2r.  .Asrss,.         .A  r  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
 |          ,Hr r: Mr                    i: .i  |   | [contact]                                                  |
 |           25 .s 5A.                   s. rs  |   | discord = @aeiree                                          |
 |           :M. r,sAX                  .s  hi  |   | email = erireilly9@gmail.com                               |
 |           si5. XX3 ,                 s. 22s  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-|           s,rs i5As  .;;::,,,,:,.   .s r2i2  |   | next refresh at = 2026-07-10 18:00 EDT                     |
+|           s,rs i5As  .;;::,,,,:,.   .s i2i2  |   | next refresh at = 2026-07-10 18:00 EDT                     |
 +----------------------------------------------+   +------------------------------------------------------------+
 ```
 
