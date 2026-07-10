@@ -1,10 +1,10 @@
 {
   "login": "aerybyte",
   "stats": {
-    "additions": 1593,
-    "commits": 16,
-    "contributions": 391,
-    "deletions": 309,
+    "additions": 3729,
+    "commits": 17,
+    "contributions": 394,
+    "deletions": 980,
     "includes_private": false,
     "language_weights": {
       "Python": 79346
@@ -14,5 +14,5 @@
     "source": "GitHub GraphQL",
     "stars": 0
   },
-  "updated_at_utc": "2026-07-10T18:15:20+00:00"
+  "updated_at_utc": "2026-07-10T22:31:37+00:00"
 }
