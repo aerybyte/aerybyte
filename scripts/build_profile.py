@@ -939,8 +939,9 @@ def _normalize_readme_sync_stamp(markdown: str) -> str:
 
 def _terminal_row(label: str, value: str, width: int = 74, label_width: int = 25) -> str:
     clean_label = clean(label, label_width)
-    clean_value = clean(value, 50)
     base = f"{clean_label}: "
+    max_value = max(10, width - len(base) - 5)
+    clean_value = clean(value, max_value)
     dots = max(2, width - len(base) - len(clean_value) - 1)
     return f"{base}{'.' * dots} {clean_value}"
 
@@ -997,6 +998,8 @@ def _terminal_info_lines(
     profile: Mapping[str, Any],
     stats: Mapping[str, Any],
     config: Mapping[str, Any],
+    panel_width: int = 68,
+    label_width: int = 21,
 ) -> list[str]:
     display = config.get("display") if isinstance(config.get("display"), dict) else {}
     uptime_config = config.get("uptime") if isinstance(config.get("uptime"), dict) else {}
@@ -1037,11 +1040,11 @@ def _terminal_info_lines(
         ("last sync", refreshed, "text"),
     ]
 
-    lines.append(_section_header(str(profile.get("login") or "aerybyte"), width=68))
+    lines.append(_section_header(str(profile.get("login") or "aerybyte"), width=panel_width))
     for section_name, rows in _ordered_sections(section_map, config):
-        lines.append(_section_header(section_name, width=68))
+        lines.append(_section_header(section_name, width=panel_width))
         for label, value, _ in rows:
-            lines.append(_terminal_row(label, value, width=68, label_width=21))
+            lines.append(_terminal_row(label, value, width=panel_width, label_width=label_width))
     return lines
 
 
@@ -1053,20 +1056,39 @@ def render_readme(
 ) -> str:
     profile_name = clean(profile.get("name") or profile.get("login") or "aerybyte", 48)
     login = clean(profile.get("login") or "aerybyte", 40)
-    info_lines = _terminal_info_lines(profile, stats, config)
-
-    left_width = max(44, min(60, max((len(row) for row in ascii_rows), default=44)))
+    display = config.get("display") if isinstance(config.get("display"), dict) else {}
+    left_width = max(38, min(50, int(display.get("readme_ascii_column_width") or 44)))
+    right_width = max(50, min(62, int(display.get("readme_info_column_width") or 58)))
+    info_lines = _terminal_info_lines(profile, stats, config, panel_width=right_width, label_width=22)
     merged: list[str] = []
     total_lines = max(len(ascii_rows), len(info_lines))
+    top = f"+{'-' * (left_width + 2)}+{'-' * (right_width + 2)}+"
+    merged.append(top)
     for index in range(total_lines):
-        left = ascii_rows[index] if index < len(ascii_rows) else ""
-        right = info_lines[index] if index < len(info_lines) else ""
-        merged.append(f"{left.ljust(left_width)}   {right}".rstrip())
+        left_raw = ascii_rows[index] if index < len(ascii_rows) else ""
+        right_raw = info_lines[index] if index < len(info_lines) else ""
+        left = left_raw[:left_width]
+        right = right_raw
+        merged.append(f"| {left.ljust(left_width)} | {right.ljust(right_width)} |")
+    merged.append(top)
 
     terminal_block = "\n".join(merged).rstrip() + "\n"
+    local_zone = profile_timezone(config)
+    next_eta, next_at = _next_refresh(local_zone)
+    source = clean(stats.get("source") or "live GitHub data", 40)
+
+    status_block = "\n".join(
+        [
+            f"+ live source: {source}",
+            f"+ next refresh: {next_at} ({next_eta})",
+            "! timezone-aware cron: 17 */6 * * * (EST/EDT)",
+        ]
+    )
+
     return (
         f"# {profile_name}\n\n"
         f"```text\n{terminal_block}```\n\n"
+        f"```diff\n{status_block}\n```\n\n"
         "- dynamic profile: live public GitHub stats + avatar-to-ASCII renderer\n"
         "- automation: cron every 6 hours in Eastern Time (EST/EDT aware)\n"
         "- commit policy: push only when generated content actually changes\n\n"

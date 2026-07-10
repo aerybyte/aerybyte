@@ -40,13 +40,15 @@ display:
     - github --live
     - contact
     - automation
+  readme_ascii_column_width: 44
+  readme_info_column_width: 58
   show_public_email: false
 
   # Blank = fetch the current GitHub profile picture on every scheduled run.
   avatar_path: ""
   # Last successful download. It is also the offline/emergency fallback.
   avatar_cache_path: "assets/avatar.png"
-  ascii_width: 54
+  ascii_width: 46
   avatar_vertical_focus: 0.50
   avatar_zoom: 1.05
   ascii_shape: "rounded_square" # rounded_square, circle, or square
