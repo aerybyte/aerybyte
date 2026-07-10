@@ -17,10 +17,10 @@ iriiiiiiiirrrsXXAXrrsX25AAXsssiiiAM2HhAX5Xirii
 :,;sAXiXX  :s,;,   .   :sAX;. :iAsrAXr5XsssssX
 ::iiirX55rr5:     .X       :;:rA2Xsrii2sssXssX
 ::sAXsA2sXXr;:,.,;ii;.    .Ar;r2risriiAssXXsXs
-:::rrXXAs;;..,,:,.  ,;;::;;irs2XXsAsi;AsssssXs
+:::rrXXAs;;..,,:,.  ,;;::;;iis2XXsAsi;AsssssXs
 :,:ss2X5X  .,.             .iXsrssXXri2ssssXrr
 ri;s2Xrss.   ..            ,::;;;rri;sAsssssii
-iirsXsrsr;                  ,;ii;sii;2ssssXs;;
+iirsXsrsr;                  ,;ii;sii;2ssssss;;
 iiirXsrrs:i                 ,;i;ir;;sAssrss;::
 ::iis;;:ii,i               .,i;rr;;rArssrr;:::
 ::;:::::,s;,i,             .;irr;;sAssri;;::::
