@@ -15,6 +15,7 @@ and refreshes the generated assets on a timezone-aware cron schedule.
 from __future__ import annotations
 
 import argparse
+import json
 import hashlib
 import html
 import io
@@ -174,8 +175,94 @@ def load_config(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
         data = yaml.safe_load(handle) or {}
     if not isinstance(data, dict):
-        raise ValueError("profile.yml must contain a top-level mapping")
+        raise ValueError("config file must contain a top-level mapping")
     return data
+
+
+def validate_config(config: Mapping[str, Any], config_path: Path) -> None:
+    """Validate user template config and raise plain-English errors when invalid."""
+    issues: list[str] = []
+    notes: list[str] = []
+
+    def expect_mapping(field: str) -> Mapping[str, Any] | None:
+        value = config.get(field)
+        if value is None:
+            return None
+        if not isinstance(value, dict):
+            issues.append(f"{field} must be a mapping (key/value block) in {config_path.name}.")
+            return None
+        return value
+
+    profile_config = expect_mapping("profile") or {}
+    sections_config = expect_mapping("sections") or {}
+    uptime_config = expect_mapping("uptime") or {}
+    display_config = expect_mapping("display") or {}
+
+    additional_fields = profile_config.get("additional_fields")
+    if additional_fields is not None:
+        if not isinstance(additional_fields, dict):
+            issues.append("profile.additional_fields must be a key/value mapping of text fields.")
+
+    source = str(uptime_config.get("source") or "github_account").strip().lower()
+    if source not in {"custom", "github_account"}:
+        notes.append(
+            "uptime.source is not one of custom/github_account. The renderer will still run and use defaults where needed."
+        )
+
+    precision = str(uptime_config.get("precision") or "days").strip().lower()
+    if precision not in {"years", "months", "days"}:
+        notes.append(
+            "uptime.precision is not one of years/months/days. The renderer may fall back to days."
+        )
+
+    timezone_name = str(
+        os.getenv("PROFILE_TIMEZONE")
+        or uptime_config.get("timezone")
+        or "UTC"
+    ).strip()
+    try:
+        ZoneInfo(timezone_name)
+    except ZoneInfoNotFoundError:
+        issues.append(
+            "uptime.timezone must be a valid IANA timezone like America/New_York, Europe/London, or Asia/Tokyo."
+        )
+
+    shape = str(display_config.get("ascii_shape") or "rounded_square").strip().lower()
+    if shape not in {"rounded_square", "circle", "square"}:
+        notes.append(
+            "display.ascii_shape is not one of rounded_square/circle/square. The renderer may fall back to rounded_square."
+        )
+
+    if "ascii_width" in display_config:
+        try:
+            int(display_config.get("ascii_width"))
+        except (TypeError, ValueError):
+            issues.append("display.ascii_width must be a number.")
+
+    section_order = display_config.get("readme_section_order")
+    if section_order is not None:
+        if not isinstance(section_order, list):
+            issues.append("display.readme_section_order must be a list of section names.")
+        elif any(not isinstance(item, str) for item in section_order):
+            notes.append(
+                "display.readme_section_order contains non-text items. They will be stringified where possible."
+            )
+
+    stack_config = sections_config.get("stack")
+    if stack_config is not None and not isinstance(stack_config, dict):
+        issues.append("sections.stack must be a mapping of labels to text.")
+
+    if issues:
+        formatted = "\n".join(f"- {issue}" for issue in issues)
+        raise ValueError(
+            f"Config validation failed for {config_path.name}. Please fix the following:\n{formatted}"
+        )
+
+    if notes:
+        print(
+            "config notes:\n" + "\n".join(f"- {note}" for note in notes),
+            file=sys.stderr,
+        )
 
 
 def headers(token: str | None = None) -> dict[str, str]:
@@ -223,6 +310,139 @@ def fetch_profile(username: str, token: str | None) -> dict[str, Any]:
     return data
 
 
+def fetch_code_frequency_churn(
+    username: str,
+    repo_names: list[str],
+    token: str | None,
+    max_repos: int = 24,
+) -> tuple[int | None, int | None]:
+    """Return summed additions/deletions across repos using REST code_frequency stats.
+
+    The endpoint is asynchronous and may return 202. In that case we skip that repo.
+    """
+    additions = 0
+    deletions = 0
+    has_data = False
+
+    for repo_name in repo_names[:max_repos]:
+        response = requests.get(
+            f"{API_ROOT}/repos/{username}/{repo_name}/stats/code_frequency",
+            headers=headers(token),
+            timeout=30,
+        )
+
+        if response.status_code == 202:
+            continue
+        if response.status_code in {403, 404, 451}:
+            continue
+
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, list):
+            continue
+
+        has_data = True
+        for week in payload:
+            if not isinstance(week, list) or len(week) < 3:
+                continue
+            additions += int(week[1] or 0)
+            deletions += abs(int(week[2] or 0))
+
+    if not has_data:
+        return None, None
+    return additions, deletions
+
+
+def fetch_commit_totals_from_contributors(
+    username: str,
+    repo_names: list[str],
+    token: str | None,
+    max_repos: int = 24,
+) -> int | None:
+    """Return summed commit totals for a user from REST contributors stats.
+
+    The endpoint is asynchronous and may return 202. In that case we skip that repo.
+    """
+    total_commits = 0
+    has_data = False
+    target = username.casefold()
+
+    for repo_name in repo_names[:max_repos]:
+        response = requests.get(
+            f"{API_ROOT}/repos/{username}/{repo_name}/stats/contributors",
+            headers=headers(token),
+            timeout=30,
+        )
+
+        if response.status_code == 202:
+            continue
+        if response.status_code in {403, 404, 451}:
+            continue
+
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, list):
+            continue
+
+        has_data = True
+        for contributor in payload:
+            if not isinstance(contributor, dict):
+                continue
+            author = contributor.get("author")
+            if not isinstance(author, dict):
+                continue
+            login = str(author.get("login") or "").strip().casefold()
+            if login != target:
+                continue
+            total_commits += int(contributor.get("total") or 0)
+
+    if not has_data:
+        return None
+    return total_commits
+
+
+def fetch_commit_totals_from_commits_api(
+    username: str,
+    repo_names: list[str],
+    token: str | None,
+    max_repos: int = 24,
+) -> int | None:
+    """Fallback commit count using commits pagination for the given author."""
+    total = 0
+    has_data = False
+
+    for repo_name in repo_names[:max_repos]:
+        response = requests.get(
+            f"{API_ROOT}/repos/{username}/{repo_name}/commits",
+            headers=headers(token),
+            params={"author": username, "per_page": 1},
+            timeout=30,
+        )
+
+        if response.status_code in {403, 404, 409, 451}:
+            continue
+
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, list):
+            continue
+
+        has_data = True
+        if not payload:
+            continue
+
+        link_header = str(response.headers.get("Link") or "")
+        last_page_match = re.search(r"[?&]page=(\d+)>;\s*rel=\"last\"", link_header)
+        if last_page_match:
+            total += int(last_page_match.group(1))
+        else:
+            total += len(payload)
+
+    if not has_data:
+        return None
+    return total
+
+
 def fetch_graphql_stats(
     username: str,
     token: str,
@@ -248,11 +468,12 @@ def fetch_graphql_stats(
         {"login": username, "from": start.isoformat(), "to": now.isoformat()},
     )
     contribution_user = contribution_data.get("user") or {}
+    contribution_collection = contribution_user.get("contributionsCollection") or {}
     contributions = (
-        contribution_user.get("contributionsCollection", {})
-        .get("contributionCalendar", {})
+        contribution_collection.get("contributionCalendar", {})
         .get("totalContributions")
     )
+    commits = contribution_collection.get("totalCommitContributions")
 
     repository_query = """
     query($login: String!, $cursor: String) {
@@ -267,8 +488,9 @@ def fetch_graphql_stats(
           pageInfo { hasNextPage endCursor }
           nodes {
             isPrivate
+                        name
             stargazerCount
-            languages(first: 5, orderBy: {field: SIZE, direction: DESC}) {
+                        languages(first: 20, orderBy: {field: SIZE, direction: DESC}) {
               edges { size node { name color } }
             }
           }
@@ -279,21 +501,33 @@ def fetch_graphql_stats(
 
     cursor: str | None = None
     stars = 0
+    repo_count = 0
+    includes_private = False
+    total_language_bytes = 0
+    repo_names: list[str] = []
     language_weights: defaultdict[str, int] = defaultdict(int)
     while True:
         result = post_graphql(token, repository_query, {"login": username, "cursor": cursor})
         user = result.get("user") or {}
         repositories = user.get("repositories") or {}
         for repository in repositories.get("nodes") or []:
-            if not repository or repository.get("isPrivate"):
+            if not repository:
                 continue
+            repo_count += 1
+            if repository.get("isPrivate"):
+                includes_private = True
+            repo_name = str(repository.get("name") or "").strip()
+            if repo_name:
+                repo_names.append(repo_name)
             stars += int(repository.get("stargazerCount") or 0)
             for edge in (repository.get("languages") or {}).get("edges") or []:
                 node = edge.get("node") or {}
                 name = str(node.get("name") or "").strip()
+                size = int(edge.get("size") or 0)
+                total_language_bytes += size
                 if not name or name.casefold() in excluded_languages:
                     continue
-                language_weights[name] += int(edge.get("size") or 0)
+                language_weights[name] += size
         page_info = repositories.get("pageInfo") or {}
         if not page_info.get("hasNextPage"):
             break
@@ -301,9 +535,21 @@ def fetch_graphql_stats(
         if not cursor:
             break
 
+    additions, deletions = fetch_code_frequency_churn(username, repo_names, token)
+    if commits is None:
+        commits = fetch_commit_totals_from_contributors(username, repo_names, token)
+    if commits is None:
+        commits = fetch_commit_totals_from_commits_api(username, repo_names, token)
+
     return {
         "stars": stars,
+        "repo_count": repo_count,
         "contributions": int(contributions) if contributions is not None else None,
+        "commits": int(commits) if commits is not None else None,
+        "additions": additions,
+        "deletions": deletions,
+        "lines_of_code": int(round(total_language_bytes / 38.0)) if total_language_bytes > 0 else None,
+        "includes_private": includes_private,
         "language_weights": dict(language_weights),
         "source": "GitHub GraphQL",
     }
@@ -316,6 +562,9 @@ def fetch_rest_repository_stats(
 ) -> dict[str, Any]:
     page = 1
     stars = 0
+    repo_count = 0
+    estimated_lines = 0
+    repo_names: list[str] = []
     language_weights: Counter[str] = Counter()
     while True:
         repositories = get_json(
@@ -328,16 +577,35 @@ def fetch_rest_repository_stats(
         for repository in repositories:
             if not isinstance(repository, dict) or repository.get("fork"):
                 continue
+            repo_name = str(repository.get("name") or "").strip()
+            if repo_name:
+                repo_names.append(repo_name)
+            repo_count += 1
             stars += int(repository.get("stargazers_count") or 0)
+            repo_size_kib = int(repository.get("size") or 0)
+            if repo_size_kib > 0:
+                estimated_lines += int(round((repo_size_kib * 1024) / 38.0))
             language = str(repository.get("language") or "").strip()
             if language and language.casefold() not in excluded_languages:
                 language_weights[language] += max(1, int(repository.get("size") or 1))
         if len(repositories) < 100 or page >= 20:
             break
         page += 1
+
+    additions, deletions = fetch_code_frequency_churn(username, repo_names, token)
+    commit_total = fetch_commit_totals_from_contributors(username, repo_names, token)
+    if commit_total is None:
+        commit_total = fetch_commit_totals_from_commits_api(username, repo_names, token)
+
     return {
         "stars": stars,
+        "repo_count": repo_count,
         "contributions": None,
+        "commits": commit_total,
+        "additions": additions,
+        "deletions": deletions,
+        "lines_of_code": estimated_lines if estimated_lines > 0 else None,
+        "includes_private": False,
         "language_weights": dict(language_weights),
         "source": "GitHub REST API",
     }
@@ -363,10 +631,68 @@ def fetch_stats(
         print(f"warning: repository stats unavailable; rendering partial data: {exc}", file=sys.stderr)
         return {
             "stars": None,
+            "repo_count": None,
             "contributions": None,
+            "commits": None,
+            "additions": None,
+            "deletions": None,
+            "lines_of_code": None,
+            "includes_private": False,
             "language_weights": {},
             "source": "live sync pending",
         }
+
+
+def read_stats_cache(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def merge_stats_with_cache(stats: Mapping[str, Any], cached: Mapping[str, Any]) -> dict[str, Any]:
+    merged = dict(stats)
+    cached_stats = cached.get("stats") if isinstance(cached.get("stats"), dict) else {}
+    for key in (
+        "repo_count",
+        "contributions",
+        "commits",
+        "additions",
+        "deletions",
+        "lines_of_code",
+        "stars",
+    ):
+        if merged.get(key) is None and cached_stats.get(key) is not None:
+            merged[key] = cached_stats.get(key)
+    if not merged.get("language_weights") and cached_stats.get("language_weights"):
+        merged["language_weights"] = cached_stats.get("language_weights")
+    if merged.get("source") in {None, "", "live sync pending"} and cached_stats.get("source"):
+        merged["source"] = cached_stats.get("source")
+    return merged
+
+
+def write_stats_cache(path: Path, username: str, stats: Mapping[str, Any]) -> bool:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "login": username,
+        "updated_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        "stats": {
+            "repo_count": stats.get("repo_count"),
+            "contributions": stats.get("contributions"),
+            "commits": stats.get("commits"),
+            "additions": stats.get("additions"),
+            "deletions": stats.get("deletions"),
+            "lines_of_code": stats.get("lines_of_code"),
+            "stars": stats.get("stars"),
+            "includes_private": stats.get("includes_private"),
+            "language_weights": stats.get("language_weights") or {},
+            "source": stats.get("source"),
+        },
+    }
+    rendered = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    return write_text_if_changed(path, rendered)
 
 
 def profile_timezone(config: Mapping[str, Any]) -> ZoneInfo:
@@ -389,7 +715,11 @@ def format_timezone_value(local_zone: ZoneInfo, display_name: str) -> str:
     abbreviation = now.tzname() or ""
     offset = now.utcoffset()
 
-    parts = [display_name.strip() or getattr(local_zone, "key", "Eastern Time")]
+    cleaned_display = re.sub(r"\s*·?\s*UTC[+-]\d{1,2}:\d{2}\b", "", display_name, flags=re.IGNORECASE)
+    cleaned_display = re.sub(r"\s*·?\s*(EST|EDT)\b", "", cleaned_display, flags=re.IGNORECASE)
+    cleaned_display = cleaned_display.strip(" ·")
+
+    parts = [cleaned_display or getattr(local_zone, "key", "Eastern Time")]
     if abbreviation and abbreviation.casefold() not in parts[0].casefold():
         parts.append(abbreviation)
 
@@ -671,6 +1001,9 @@ def offline_fixture(username: str, config: Mapping[str, Any]) -> tuple[dict[str,
         {
             "stars": preview.get("stars", "live on first run"),
             "contributions": "live on first run",
+            "commits": "live on first run",
+            "additions": None,
+            "deletions": None,
             "language_weights": {},
             "source": "preview",
         },
@@ -679,17 +1012,59 @@ def offline_fixture(username: str, config: Mapping[str, Any]) -> tuple[dict[str,
 
 def profile_rows(profile: Mapping[str, Any], config: Mapping[str, Any]) -> list[tuple[str, str, str]]:
     profile_config = config.get("profile") if isinstance(config.get("profile"), dict) else {}
+    hidden_fields = _hidden_personal_fields(config)
+    uptime_config = config.get("uptime") if isinstance(config.get("uptime"), dict) else {}
+    local_zone = profile_timezone(config)
+    precision = str(uptime_config.get("precision") or "days")
+    timezone_display = str(
+        uptime_config.get("timezone_display")
+        or getattr(local_zone, "key", "Eastern Time")
+    )
+    timezone_value = format_timezone_value(local_zone, timezone_display)
+
+    uptime_label = clean(uptime_config.get("label") or "human uptime", 22)
+    source = str(uptime_config.get("source") or "github_account").strip().lower()
+    if source == "custom":
+        start_value = str(
+            os.getenv("PROFILE_START_DATE")
+            or uptime_config.get("start_date")
+            or ""
+        ).strip()
+    else:
+        start_value = str(profile.get("created_at") or "").strip()
+
+    try:
+        uptime_value = format_uptime(start_value, local_zone, precision)
+    except Exception:
+        uptime_value = (
+            "add PROFILE_START_DATE secret"
+            if source == "custom"
+            else "live on first run"
+        )
+
     rows = [
         ("handle", f"@{profile.get('login', '')}", "accent2"),
         ("role", clean(profile_config.get("role"), 58), "text"),
         ("tagline", clean(profile_config.get("tagline"), 58), "text"),
+        (uptime_label, uptime_value, "success"),
+        ("timezone", clean(timezone_value, 58), "text"),
     ]
+    additional_fields = profile_config.get("additional_fields") if isinstance(profile_config.get("additional_fields"), dict) else {}
+    for key, value in additional_fields.items():
+        label = clean(key, 22)
+        rendered = clean(value, 58)
+        if label and rendered and label.strip().lower() not in hidden_fields:
+            rows.append((label, rendered, "text"))
     if profile_config.get("show_location", False):
         rows.append(("location", clean(profile.get("location"), 58), "text"))
     if profile_config.get("show_website", False):
         website = clean(profile.get("blog"), 58).removeprefix("https://").removeprefix("http://").rstrip("/")
         rows.append(("website", website, "accent2"))
-    return [(label, value, color) for label, value, color in rows if value]
+    return [
+        (label, value, color)
+        for label, value, color in rows
+        if value and label.strip().lower() not in hidden_fields
+    ]
 
 
 def custom_sections(config: Mapping[str, Any]) -> list[tuple[str, list[tuple[str, str, str]]]]:
@@ -709,49 +1084,24 @@ def custom_sections(config: Mapping[str, Any]) -> list[tuple[str, list[tuple[str
 
 
 def github_rows(profile: Mapping[str, Any], stats: Mapping[str, Any], config: Mapping[str, Any]) -> list[tuple[str, str, str]]:
-    uptime_config = config.get("uptime") if isinstance(config.get("uptime"), dict) else {}
-    display = config.get("display") if isinstance(config.get("display"), dict) else {}
-
-    uptime_label = clean(uptime_config.get("label") or "github uptime", 22)
-    source = str(uptime_config.get("source") or "github_account").strip().lower()
-    local_zone = profile_timezone(config)
-    precision = str(uptime_config.get("precision") or "days")
-    timezone_display = str(
-        uptime_config.get("timezone_display")
-        or getattr(local_zone, "key", "Eastern Time")
-    )
-    timezone_value = format_timezone_value(local_zone, timezone_display)
-
-    if source == "custom":
-        # PROFILE_START_DATE is an optional private override. The configured date
-        # is used when the secret/environment variable is blank.
-        start_value = str(
-            os.getenv("PROFILE_START_DATE")
-            or uptime_config.get("start_date")
-            or ""
-        ).strip()
-    else:
-        start_value = str(profile.get("created_at") or "").strip()
-
-    try:
-        uptime_value = format_uptime(start_value, local_zone, precision)
-    except Exception:
-        uptime_value = (
-            "add PROFILE_START_DATE secret"
-            if source == "custom"
-            else "live on first run"
-        )
-
-    language_weights = stats.get("language_weights") or {}
-    top_count = max(1, min(6, int(display.get("top_languages") or 4)))
-    ordered = sorted(language_weights.items(), key=lambda item: item[1], reverse=True)
-    languages = " · ".join(name for name, _ in ordered[:top_count])
-
     rows = [
-        (uptime_label, uptime_value, "success"),
-        ("timezone", clean(timezone_value, 58), "text"),
-        ("public languages", clean(languages, 58), "text"),
+        ("repositories", format_number(stats.get("repo_count")) or "live sync pending", "text"),
+        ("commits", format_number(stats.get("commits")) or "live sync pending", "text"),
+        (
+            "+ / -",
+            (
+                f"+{format_number(stats.get('additions'))} / -{format_number(stats.get('deletions'))}"
+                if stats.get("additions") is not None and stats.get("deletions") is not None
+                else "live sync pending"
+            ),
+            "text",
+        ),
+        ("lines of code", format_number(stats.get("lines_of_code")) or "live sync pending", "text"),
     ]
+    if stats.get("includes_private"):
+        rows.append(("scope", "public + private", "accent2"))
+    else:
+        rows.append(("scope", "public", "text"))
     return [(label, value, color) for label, value, color in rows if value]
 
 
@@ -760,9 +1110,9 @@ def build_sections(
     stats: Mapping[str, Any],
     config: Mapping[str, Any],
 ) -> list[tuple[str, list[tuple[str, str, str]]]]:
-    result = [("profile", profile_rows(profile, config))]
+    result = [("personal", profile_rows(profile, config))]
     result.extend(custom_sections(config))
-    result.append(("github --live", github_rows(profile, stats, config)))
+    result.append(("github stats", github_rows(profile, stats, config)))
     return [(name, rows) for name, rows in result if rows]
 
 
@@ -980,9 +1330,14 @@ def _ordered_sections(
     configured = display.get("readme_section_order")
 
     if isinstance(configured, list):
-        preferred = [str(item).strip().lower() for item in configured if str(item).strip()]
+        preferred = []
+        for item in configured:
+            label = str(item).strip().lower()
+            if not label:
+                continue
+            preferred.append("personal" if label == "profile" else label)
     else:
-        preferred = ["profile", "now", "stack", "github --live", "contact", "automation"]
+        preferred = ["personal", "top skills", "github stats", "contact"]
 
     ordered: list[tuple[str, list[tuple[str, str, str]]]] = []
     seen: set[str] = set()
@@ -1036,6 +1391,12 @@ def _plain(value: Any) -> str:
     return text.replace("`", "")
 
 
+def _hidden_personal_fields(config: Mapping[str, Any]) -> set[str]:
+    profile_config = config.get("profile") if isinstance(config.get("profile"), dict) else {}
+    raw = profile_config.get("disabled_fields") if isinstance(profile_config.get("disabled_fields"), list) else []
+    return {str(item).strip().lower() for item in raw if str(item).strip()}
+
+
 def _clip_no_ellipsis(text: str, width: int) -> str:
     if width <= 0:
         return ""
@@ -1070,15 +1431,15 @@ def _box_lines(lines: list[str], width: int, centered: bool = False) -> list[str
 
 def _metadata_rows_for_readme(profile: Mapping[str, Any], stats: Mapping[str, Any], config: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
     profile_config = config.get("profile") if isinstance(config.get("profile"), dict) else {}
+    hidden_fields = _hidden_personal_fields(config)
     sections_config = config.get("sections") if isinstance(config.get("sections"), dict) else {}
-    now_config = sections_config.get("now") if isinstance(sections_config.get("now"), dict) else {}
     stack_config = sections_config.get("stack") if isinstance(sections_config.get("stack"), dict) else {}
 
     uptime_config = config.get("uptime") if isinstance(config.get("uptime"), dict) else {}
     local_zone = profile_timezone(config)
     timezone_display = str(uptime_config.get("timezone_display") or getattr(local_zone, "key", "Eastern Time"))
-    _next_eta, next_at = _next_refresh(local_zone)
-    stats_source = clean(stats.get("source") or "live GitHub data", 40)
+    discord_handle = clean(os.getenv("PROFILE_DISCORD") or profile_config.get("discord"), 40)
+    personal_email = clean(os.getenv("PROFILE_EMAIL") or profile_config.get("email"), 60)
 
     uptime_label = clean(uptime_config.get("label") or "human uptime", 22)
     source = str(uptime_config.get("source") or "github_account").strip().lower()
@@ -1092,50 +1453,60 @@ def _metadata_rows_for_readme(profile: Mapping[str, Any], stats: Mapping[str, An
     except Exception:
         uptime_value = "live sync pending"
 
-    curated = [
-        ("languages", _split_top_skills(stack_config.get("languages"), 4)),
-        ("frontend", _split_top_skills(stack_config.get("frontend"), 3)),
-        ("backend", _split_top_skills(stack_config.get("backend & data"), 3)),
-        ("devops", _split_top_skills(stack_config.get("testing & devops"), 3)),
-        ("cloud", _split_top_skills(stack_config.get("cloud/security/obs"), 3)),
-        ("analytics", _split_top_skills(stack_config.get("analytics"), 3)),
-    ]
-
-    live_language_weights = stats.get("language_weights") or {}
-    if isinstance(live_language_weights, dict) and live_language_weights:
-        live_languages = " · ".join(
-            name for name, _ in sorted(live_language_weights.items(), key=lambda item: item[1], reverse=True)[:4]
-        )
-    else:
-        live_languages = _split_top_skills(stack_config.get("languages"), 4)
-
     profile_rows = [
         f"handle: @{_plain(profile.get('login') or 'aerybyte')}",
         f"role: {_plain(profile_config.get('role') or 'software engineer · product builder')}",
-    ]
-    now_rows = [
-        f"building: {_plain(now_config.get('building') or 'shipping product work')}",
-        f"learning: {_plain(now_config.get('learning') or 'architecture · product velocity')}",
-    ]
-    stack_rows = [f"{name}: {value}" for name, value in curated if value]
-    live_rows = [
         f"{uptime_label}: {uptime_value}",
         f"timezone: {format_timezone_value(local_zone, timezone_display)}",
-        f"languages: {live_languages}",
     ]
-    automation_rows = [
-        f"data source: {stats_source}",
-        f"next refresh at: {next_at}",
-        f"refresh timezone: {timezone_display}",
+    additional_fields = profile_config.get("additional_fields") if isinstance(profile_config.get("additional_fields"), dict) else {}
+    for key, value in additional_fields.items():
+        label = _plain(key)
+        rendered = _plain(value)
+        if label and rendered and label.strip().lower() not in hidden_fields:
+            profile_rows.append(f"{label}: {rendered}")
+    profile_rows = [
+        row for row in profile_rows if row.partition(":")[0].strip().lower() not in hidden_fields
     ]
+    skills_rows = [
+        f"languages: {_split_top_skills(stack_config.get('languages'), 4)}",
+        f"frontend: {_split_top_skills(stack_config.get('frontend'), 3)}",
+        f"backend: {_split_top_skills(stack_config.get('backend & data'), 3)}",
+        f"devops: {_split_top_skills(stack_config.get('testing & devops'), 3)}",
+        f"cloud: {_split_top_skills(stack_config.get('cloud/security/obs'), 3)}",
+        f"analytics: {_split_top_skills(stack_config.get('analytics'), 3)}",
+    ]
+    skills_rows = [row for row in skills_rows if row.rsplit(":", 1)[-1].strip()]
+    live_rows = [
+        f"repositories: {format_number(stats.get('repo_count')) or 'live sync pending'}",
+        f"commits: {format_number(stats.get('commits')) or 'live sync pending'}",
+        (
+            f"+ / -: +{format_number(stats.get('additions'))} / -{format_number(stats.get('deletions'))}"
+            if stats.get("additions") is not None and stats.get("deletions") is not None
+            else "+ / -: live sync pending"
+        ),
+        f"lines of code: {format_number(stats.get('lines_of_code')) or 'live sync pending'}",
+    ]
+    contact_rows: list[str] = []
+    if discord_handle:
+        contact_rows.append(f"discord: {discord_handle}")
+    if personal_email:
+        contact_rows.append(f"email: {personal_email}")
+    custom_contact_fields = profile_config.get("contact_fields") if isinstance(profile_config.get("contact_fields"), dict) else {}
+    for key, value in custom_contact_fields.items():
+        label = _plain(key)
+        rendered = _plain(value)
+        if label and rendered:
+            contact_rows.append(f"{label}: {rendered}")
 
-    return [
-        ("profile", profile_rows),
-        ("now", now_rows),
-        ("top skills", stack_rows),
-        ("github live", live_rows),
-        ("automation", automation_rows),
+    output = [
+        ("personal", profile_rows),
+        ("top skills", skills_rows),
+        ("github stats", live_rows),
     ]
+    if contact_rows:
+        output.append(("contact", contact_rows))
+    return output
 
 
 def _terminal_info_lines(
@@ -1146,10 +1517,7 @@ def _terminal_info_lines(
     label_width: int = 21,
 ) -> list[str]:
     display = config.get("display") if isinstance(config.get("display"), dict) else {}
-    uptime_config = config.get("uptime") if isinstance(config.get("uptime"), dict) else {}
-    local_zone = profile_timezone(config)
-    refreshed = datetime.now(local_zone).strftime("%Y-%m-%d %H:%M %Z")
-    next_eta, next_at = _next_refresh(local_zone)
+    profile_config = config.get("profile") if isinstance(config.get("profile"), dict) else {}
 
     lines: list[str] = []
     section_map: dict[str, list[tuple[str, str, str]]] = {
@@ -1158,8 +1526,10 @@ def _terminal_info_lines(
 
     compact_readme = bool(display.get("readme_compact", True))
     if compact_readme:
-        section_map["profile"] = _pick_rows(section_map.get("profile", []), {"handle", "role"})
-        section_map["now"] = _pick_rows(section_map.get("now", []), {"building", "learning"})
+        section_map["personal"] = _pick_rows(
+            section_map.get("personal", []),
+            {"handle", "role", "human uptime", "timezone"},
+        )
         section_map["stack"] = _pick_rows(
             section_map.get("stack", []),
             {
@@ -1171,13 +1541,25 @@ def _terminal_info_lines(
                 "analytics",
             },
         )
-        section_map["github --live"] = _pick_rows(
-            section_map.get("github --live", []),
-            {"human uptime", "timezone", "public languages"},
+        section_map["github stats"] = _pick_rows(
+            section_map.get("github stats", []),
+            {"repositories", "commits", "+ / -", "lines of code", "scope"},
         )
 
-    show_public_email = bool(display.get("show_public_email", False))
     contact_rows: list[tuple[str, str, str]] = []
+    discord_value = clean(os.getenv("PROFILE_DISCORD") or profile_config.get("discord"), 58)
+    email_value = clean(os.getenv("PROFILE_EMAIL") or profile_config.get("email"), 58)
+    if discord_value:
+        contact_rows.append(("discord", discord_value, "accent2"))
+    if email_value:
+        contact_rows.append(("email", email_value, "warning"))
+    custom_contact_fields = profile_config.get("contact_fields") if isinstance(profile_config.get("contact_fields"), dict) else {}
+    for key, value in custom_contact_fields.items():
+        label = clean(key, 22)
+        rendered = clean(value, 58)
+        if label and rendered:
+            contact_rows.append((label, rendered, "text"))
+    show_public_email = bool(display.get("show_public_email", False))
     blog = clean(profile.get("blog"), 50).removeprefix("https://").removeprefix("http://").rstrip("/")
     if blog:
         contact_rows.append(("website", blog, "text"))
@@ -1185,19 +1567,6 @@ def _terminal_info_lines(
         contact_rows.append(("email", clean(profile.get("email"), 50), "warning"))
     if contact_rows:
         section_map["contact"] = contact_rows
-
-    days = max(1, min(365, int(display.get("contributions_window_days") or 365)))
-    timezone_name = str(
-        uptime_config.get("timezone_display")
-        or getattr(local_zone, "key", "Eastern Time")
-    )
-    section_map["automation"] = [
-        ("next refresh in", next_eta, "success"),
-        ("next refresh at", next_at, "success"),
-        ("refresh cron", "0 */6 * * *", "text"),
-        ("refresh timezone", timezone_name, "text"),
-        ("last sync", refreshed, "text"),
-    ]
 
     lines.append(_section_header(str(profile.get("login") or "aerybyte"), width=panel_width))
     for section_name, rows in _ordered_sections(section_map, config):
@@ -1214,6 +1583,8 @@ def render_readme(
     ascii_rows: list[str],
 ) -> str:
     display = config.get("display") if isinstance(config.get("display"), dict) else {}
+    local_zone = profile_timezone(config)
+    _next_eta, next_at = _next_refresh(local_zone)
     square_rows = _fit_square_ascii_for_readme(
         ascii_rows,
         float(display.get("readme_avatar_rows_ratio") or 0.56),
@@ -1242,6 +1613,8 @@ def render_readme(
                 metadata_ini_lines.append(f"item = {safe_row.strip()}")
         if index < len(metadata_sections) - 1:
             metadata_ini_lines.append(divider)
+    metadata_ini_lines.append(divider)
+    metadata_ini_lines.append(f"next refresh at = {next_at}")
     metadata_box_lines = _box_lines(metadata_ini_lines, metadata_width, centered=False)
 
     if len(metadata_box_lines) < len(avatar_box_lines):
@@ -1297,7 +1670,12 @@ def write_readme_if_meaningfully_changed(path: Path, content: str) -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, default=Path("profile.yml"))
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=Path("profile.template.yml"),
+        help="Template config path (defaults to profile.template.yml)",
+    )
     parser.add_argument("--output-dir", type=Path, default=Path("assets"))
     parser.add_argument("--username", default=os.getenv("GITHUB_USERNAME") or os.getenv("GITHUB_REPOSITORY_OWNER"))
     parser.add_argument("--avatar", type=Path, help="Optional local image for a preview or permanent override")
@@ -1305,8 +1683,15 @@ def main() -> int:
     args = parser.parse_args()
 
     config = load_config(args.config)
+    validate_config(config, args.config)
     username = str(args.username or "aerybyte").strip()
     token = os.getenv("GITHUB_TOKEN") or None
+    is_scheduled_refresh = str(os.getenv("GITHUB_EVENT_NAME") or "").strip().lower() == "schedule"
+    stats_cache_path = args.output_dir / "github-stats-cache.json"
+    cached_stats = read_stats_cache(stats_cache_path)
+    if is_scheduled_refresh:
+        cached_stats = {}
+        stats_cache_path.unlink(missing_ok=True)
 
     if args.offline:
         profile, stats = offline_fixture(username, config)
@@ -1328,6 +1713,11 @@ def main() -> int:
             int(display.get("contributions_window_days") or 365),
             excluded,
         )
+
+    # Force fresh stats on cron schedule runs by bypassing cache fallback.
+    if not is_scheduled_refresh:
+        stats = merge_stats_with_cache(stats, cached_stats)
+    write_stats_cache(stats_cache_path, username, stats)
 
     display = config.get("display") if isinstance(config.get("display"), dict) else {}
     configured_avatar = str(display.get("avatar_path") or "").strip()

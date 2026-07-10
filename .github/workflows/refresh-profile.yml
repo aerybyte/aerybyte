@@ -9,7 +9,7 @@ name: Refresh profile card
       timezone: "America/New_York"
   push:
     paths:
-      - "profile.yml"
+      - "profile.template.yml"
       - "requirements.txt"
       - "scripts/build_profile.py"
       - ".github/workflows/refresh-profile.yml"
@@ -46,9 +46,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_USERNAME: ${{ github.repository_owner }}
-          # Optional override. Leave unset to use 2004-07-13 from profile.yml.
+          # Optional override. Leave unset to use start_date from profile.template.yml.
           PROFILE_START_DATE: ${{ secrets.PROFILE_START_DATE }}
-        run: python scripts/build_profile.py
+        run: python scripts/build_profile.py --config profile.template.yml
 
       - name: Commit refreshed assets
         shell: bash
@@ -57,6 +57,7 @@ jobs:
             README.md \
             assets/avatar.png \
             assets/avatar-ascii.txt \
+            assets/github-stats-cache.json \
             assets/profile-terminal-dark.svg \
             assets/profile-terminal-light.svg
 

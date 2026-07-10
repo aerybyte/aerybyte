@@ -1,31 +1,31 @@
 ```text
 +----------------------------------------------+   +------------------------------------------------------------+
-|    iiiiiirrrrrrsrs2AXssrsXrrrrrrsrrXM25AA;i  |   | [profile]                                                  |
-|   iiiiiiiirrrrrrrAAXrsrrsrrrrrrsiii23hMMA;r  |   | handle = @aerybyte                                         |
-| rriiiiriiirrrrrs2AXssrssrrrriiriiisGhM3h5si  |   | role = software engineer · product builder                 |
-| iriiiiiiiiirrrr2AXssrrsiirii;rrii;2523AMHsi  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-| iriiiiiiiirrrsXXAXrrsX25AAXsssiiiAM2HhAX5Xi  |   | [now]                                                      |
-| ;iiiiiiiiirrX, ;r.AGhhH;:s ,5Mhhh5hS5A2M3sr  |   | building = ATP — Around The Post                           |
-| :iririiiiiis: .i::2sMX5r,X, XMhhhM35h5rA2sr  |   | learning = scalable architecture · mobile-first design     |
-| :;riiiiii;XX:.,..,:,i,r.,,.:s3hhHMhMss32AXi  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-| :;riiiirisr.,rrr;..,,,..,,:.,i2MHHh2322A2Xs  |   | [top skills]                                               |
-| :;riiiiirs.:sMMM3i.,,,,rA22i::iA22hsA3A22AX  |   | languages = Python · TypeScript · JavaScript · C#          |
-| ::iirrirs  i5HHM3r....sHHSGMr;;rAsrriX5AAAX  |   | frontend = React · Next.js · React Native                  |
-| ::isriisi  ,s332s, .. ;5HM52r,;rAs;irs5AXXX  |   | backend = Node.js · Supabase · PostgreSQL                  |
-| :,;sAXiXX  :s,;,   .   :sAX;. :iAsrAXr5Xsss  |   | devops = Git · Docker · Kubernetes                         |
-| ::sAXsA2sXXr;:,.,;ii;.    .Ar;r2risriiAssXX  |   | cloud = Render · Sentry integration · Cloudflare           |
-| :::rrXXAs;;..,,:,.  ,;;::;;iis2XXsAsi;Assss  |   | analytics = Power BI · data scraping · data analysis       |
-| :,:ss2X5X  .,.             .iXsrssXXri2ssss  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-| iirsXsrsr;                  ,;ii;sii;2sssss  |   | [github live]                                              |
-| iiirXsrrs:i                 ,;i;ir;;sAssrss  |   | human uptime = 21 years, 11 months, 27 days                |
-| ::iis;;:ii,i               .,i;rr;;rArssrr;  |   | timezone = Eastern Time · EDT · UTC-04:00                  |
-| :;::::::;:ii,;:          .,;iii;rAAssr;:;;:  |   | languages = Python                                         |
-| ;:::::::;:,;riir;       .,irrrsA2Xri;:::;::  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-| :::::::;:::::,,;,r;;rrrsr2XXXrii:,:::::;:::  |   | [automation]                                               |
-| ::::::;:::::::;:,;s.X2.;22sr;::;:::::::;:::  |   | data source = GitHub GraphQL                               |
-| :,,::;::::::::;::,isrissX;:::,;:::::::;::::  |   | next refresh at = 2026-07-10 18:00 EDT                     |
-|   r,;::::::::;:::::::;:::::::;:::::::;:::::  |   | refresh timezone = Eastern Time                            |
-|    ;;:::::::;:::::::;::::::::;:::::::;:::;,  |   |                                                            |
+| SSSSSSSSSSSSSSM3SSSSSSSSSSSSSSSSSGX3SSSSSSS  |   | [personal]                                                 |
+| SSSSSSSSSSSSSG: 3SSSSSSSSSSSSSSSG; .MSSSSSS  |   | handle = @aerybyte                                         |
+| XSSSSSSSSSSSG,   ;SSSSSSSSSSSSS5;,   MSSSSS  |   | role = software engineer · product builder                 |
+|  5SSSSSSSSSS3 .;XX3SSSSSSSSSSSH52i,  XSSSSS  |   | human uptime = 21 years, 11 months, 27 days                |
+|  ,GSSSSSSSSSX ,MHSMSSSSSSSSSSSGGH2;  :SSSSS  |   | timezone = Eastern Time · EDT · UTC-04:00                  |
+| ;.;SSSSSSSSS:XGSSGh353HSHHhHGGSSGGGMr,HSSSS  |   | pronouns = not disclosed                                   |
+| i:.GSSSSSSSGHShXr; ;5,s2ir35Xis3hMSGSMhMSSS  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| ::.2SSSSSSHs ,:ir;:,.....,.,;rsi:..ihGGGHSS  |   | [top skills]                                               |
+| ;;:ASSSSSSA ,;A533s;. ... ,iA2XsXi..XGGSSSS  |   | languages = Python · TypeScript · JavaScript · C#          |
+| ;:,XSSSSSG: ,AG3222i,s2s:.:XGArsXr; rHHGGGS  |   | frontend = React · Next.js · React Native                  |
+| i;i5SSSSSA  .ih3Mii:      ,XH2G2;r,    XSSG  |   | backend = Node.js · Supabase · PostgreSQL                  |
+| si:5SSSSS2   .:ii;,        :;X2Xi:     XSGG  |   | devops = Git · Docker · Kubernetes                         |
+| AAihSSSSSM    ..              ..       5SGS  |   | cloud = Render · Sentry integration · Cloudflare           |
+| GX2SGGHGGGG; .:s,    ,;      ,:r:,   .AXAhH  |   | analytics = Power BI · data scraping · data analysis       |
+| S2MGHGSSSSM3s; ,r:,,,:;:,.,;,ri. ,::iXi,r5M  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| G3HGGGGGGGri;.,:  ..    .,,;i  :, .rr:,.iAh  |   | [github stats]                                             |
+| SSSSSSSHHS; ::             ,,i;,..:.    ;3M  |   | repositories = 1                                           |
+| SSSSSGMGSSA.:                 :    ;.   s3h  |   | commits = 0                                                |
+| SSSSGMHSGGH:                  .:    ,  .Ahh  |   | + / - = +2,237 / -405                                      |
+| GHhHh33222X2;                   ,  ,. rh33H  |   | lines of code = 9,432                                      |
+| Hh55AAsrrrsir;   .               .,. ih25MG  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| AAXssri;:.... ,::                 ,AM32MHGG  |   | [contact]                                                  |
+| XXXX;;:,..      .::,          .;s2HHM53hHGS  |   | discord = @aeiree                                          |
+| rXs;::.     ....  .,i:.:,.,;::rs2HHSG332A2X  |   | email = erireilly9@gmail.com                               |
+| Xrrii;:,,.           ;i:r:::r,:25X;. .... .  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| Xs:...,:;;iiiiiii     ....  ..,:.            |   | next refresh at = 2026-07-10 18:00 EDT                     |
 +----------------------------------------------+   +------------------------------------------------------------+
 ```
 

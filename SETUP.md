@@ -1,136 +1,233 @@
-# Install the cron-powered profile in `aerybyte/aerybyte`
+# Dynamic GitHub Profile README Setup
 
-This package is personalized for **@aerybyte**. It includes a terminal-style
-profile card, birthday-based human uptime, live public GitHub statistics, and an
-ASCII portrait rebuilt from the current GitHub profile picture.
+This repo is now template-first so a nontechnical user can customize one file and run.
 
-## Already configured
+## Install dependencies
 
-- birth date: `2004-07-13`
-- uptime label: `human uptime`
-- timezone: `America/New_York`
-- timezone display: `Eastern Time · EST/EDT · UTC offset`
-- profile-picture source: the current `@aerybyte` GitHub avatar
-- automatic cadence: every six hours on the hour Eastern Time
-- themes: automatic dark and light SVGs
+Before running locally, install Python and project dependencies:
 
-The exact date is stored in `profile.yml`, so it will be public in the profile
-repository. To keep the raw date out of the source, blank `uptime.start_date`
-and create an Actions secret named `PROFILE_START_DATE` with `2004-07-13`.
-The rendered age still makes the date reasonably inferable.
+1. Use Python 3.13 (or close to it).
 
-## Cron schedule
-
-The scheduled workflow is `.github/workflows/refresh-profile.yml`:
-
-```yaml
-schedule:
-  - cron: "0 */6 * * *"
-    timezone: "America/New_York"
-```
-
-It runs at **12:00 AM, 6:00 AM, 12:00 PM, and 6:00 PM Eastern Time**. The IANA
-zone follows daylight-saving time, so GitHub schedules it in EST during winter
-and EDT during summer. The midnight run advances human uptime on the correct
-local calendar date.
-
-The generator compares the rendered content while ignoring only the volatile
-footer timestamp. It commits when the avatar, uptime, statistics, copy, timezone,
-or theme actually changed; unchanged checks create no noise commits. The footer
-therefore records the last meaningful card update, not merely the last cron check.
-
-## Dynamic profile-picture ASCII
-
-Every run performs this sequence:
-
-1. Read the repository owner (`aerybyte`).
-2. Request the public GitHub user record.
-3. Download the current `avatar_url` without forwarding a personal token.
-4. Convert the image into adaptive color ASCII.
-5. Update `assets/avatar-ascii.txt` and both SVG profile cards.
-6. Cache the last successful image as `assets/avatar.png`.
-7. Commit changed assets with `github-actions[bot]`.
-
-The avatar cache means a temporary image/CDN failure keeps the last good portrait
-instead of replacing it with a generic placeholder. Changing the GitHub profile
-picture is reflected on the next cron run, or immediately after a manual run.
-
-## Install
-
-1. Open or create the public profile repository `aerybyte/aerybyte`.
-2. Copy **all** files from this folder into the repository root, including the
-   hidden `.github` directory.
-3. Commit and push.
-4. Open **Actions → Refresh profile card → Run workflow** for the first live
-   refresh.
-5. Confirm that the bot updates:
-   - `assets/avatar.png`
-   - `assets/avatar-ascii.txt`
-   - `assets/profile-terminal-dark.svg`
-   - `assets/profile-terminal-light.svg`
-
-The bundled assets are already usable as an initial preview. The first workflow
-run replaces preview values with current public repository, star, follower,
-contribution, and language data.
-
-## Permissions
-
-The workflow requests only:
-
-```yaml
-permissions:
-  contents: write
-```
-
-That permission is needed to commit regenerated assets. If a run renders files
-but cannot push, check **Settings → Actions → General → Workflow permissions**,
-plus any branch-protection or organization rules.
-
-No personal access token is required. The workflow uses GitHub's built-in,
-short-lived `GITHUB_TOKEN`.
-
-## Customize
-
-Edit `profile.yml`. Useful settings include:
-
-```yaml
-uptime:
-  start_date: "2004-07-13"
-  timezone: "America/New_York"
-  timezone_display: "Eastern Time"
-
-display:
-  avatar_path: ""                    # blank means current GitHub profile picture
-  avatar_cache_path: "assets/avatar.png"
-  ascii_width: 54
-  avatar_zoom: 1.05
-  ascii_shape: "rounded_square"
-```
-
-To use a permanent non-GitHub image, add it to the repository and set
-`display.avatar_path` to that path. When `avatar_path` is nonblank, it becomes a
-manual override and the GitHub avatar is no longer downloaded.
-
-## Local preview
+1. Create and activate a virtual environment.
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate      # PowerShell: .venv\Scripts\Activate.ps1
+source .venv/bin/activate
+```
+
+1. Install dependency packages from requirements.txt.
+
+```bash
+python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python scripts/build_profile.py --offline
 ```
 
-For a live local refresh:
+These dependencies are used by the renderer for GitHub API calls, YAML parsing,
+image processing, and ASCII generation.
+
+## What to edit
+
+Edit only this file for personal values:
+
+- profile.template.yml
+
+The cron workflow reads this template directly.
+
+## What is automatic vs manual
+
+Manual values (you edit in profile.template.yml):
+
+- personal metadata: role, tagline, discord, email
+- extra personal metadata via profile.additional_fields (any key/value fields)
+- optional removal of built-in personal fields via profile.disabled_fields
+- extra contact metadata via profile.contact_fields
+- top skills text
+- timezone name and display label
+- avatar settings, theme colors, section order
+
+Automatic values (cron updates these during each run):
+
+- GitHub stats (repositories, commits, + / - line churn, lines of code, scope)
+- next refresh timestamp
+- timezone suffix details (EST/EDT and UTC offset)
+- avatar-ascii render and SVG assets
+
+## Quick start (copy to your own profile repo)
+
+1. Create or open your GitHub profile repository.
+
+- Repository must be named exactly your username, for example: yourname/yourname.
+
+1. Copy this project into that repository.
+
+- Include hidden folders such as .github.
+
+1. Edit profile.template.yml.
+
+- Replace role, skills, discord, email, timezone, and optional start date.
+
+1. Commit and push.
+
+1. Run the workflow once manually.
+
+- GitHub -> Actions -> Refresh profile card -> Run workflow.
+
+1. Confirm generated files updated.
+
+- README.md
+- assets/avatar-ascii.txt
+- assets/profile-terminal-dark.svg
+- assets/profile-terminal-light.svg
+- assets/github-stats-cache.json
+
+## Cron schedule
+
+Workflow file:
+
+- .github/workflows/refresh-profile.yml
+
+Schedule:
+
+- `0 */6 * * *` in `America/New_York`
+- Runs at 12:00 AM, 6:00 AM, 12:00 PM, and 6:00 PM Eastern
+
+On scheduled runs, stats cache is invalidated and refreshed live, then cache is rewritten.
+
+## Important fields in profile.template.yml
+
+profile section:
+
+- role: main subtitle text
+- tagline: optional
+- discord and email: shown in contact section
+- additional_fields: any extra personal fields to show in the personal section
+- disabled_fields: hide any built-in or additional personal fields by label
+- contact_fields: add extra contact key/value fields
+
+sections.stack section:
+
+- Feeds top skills block in README
+
+uptime section:
+
+- source: custom or github_account
+- start_date: used when source is custom
+- timezone: use IANA timezone (example: America/New_York)
+- timezone_display: display prefix text
+
+Timezone examples that work:
+
+- America/New_York
+- Europe/London
+- Asia/Tokyo
+- Australia/Sydney
+
+display section:
+
+- readme_section_order: metadata layout order
+- avatar_path: local image override when non-empty
+- ascii_shape: rounded_square, circle, or square
+
+## Secrets and optional environment variables
+
+Recommended GitHub Actions secret:
+
+- PROFILE_START_DATE (optional)
+
+Optional environment overrides supported by the script:
+
+- PROFILE_TIMEZONE
+- PROFILE_DISCORD
+- PROFILE_EMAIL
+
+## Workflow permissions
+
+Required in GitHub Actions:
+
+- permissions: contents: write
+
+This is needed so the bot can commit regenerated files.
+
+## Config validation (plain-English errors)
+
+Before rendering, the script validates profile.template.yml and fails early with clear messages if something is wrong.
+
+Examples of what is validated:
+
+- timezone format (must be a valid IANA timezone)
+- allowed values for uptime.source and uptime.precision
+- display.ascii_shape value
+- structure for profile.additional_fields and section order lists
+
+If validation fails, fix the listed items and run the command again.
+
+## Recipes (safe metadata edits)
+
+Use these quick examples in profile.template.yml.
+
+Add a new personal field:
+
+```yaml
+profile:
+  additional_fields:
+    current_focus: "building developer tools"
+```
+
+Hide a built-in field (for example timezone):
+
+```yaml
+profile:
+  disabled_fields:
+    - timezone
+```
+
+Hide pronouns only:
+
+```yaml
+profile:
+  disabled_fields:
+    - pronouns
+```
+
+Add extra contact fields:
+
+```yaml
+profile:
+  contact_fields:
+    linkedin: "linkedin.com/in/yourname"
+    website: "yourdomain.com"
+```
+
+Remove contact section entirely:
+
+```yaml
+profile:
+  discord: ""
+  email: ""
+  contact_fields: {}
+```
+
+After edits, run:
 
 ```bash
-GITHUB_USERNAME=aerybyte python scripts/build_profile.py
+python scripts/build_profile.py --config profile.template.yml
 ```
 
-Optional overrides:
+## Local preview
+
+Run locally:
 
 ```bash
-PROFILE_START_DATE=2004-07-13 \
-PROFILE_TIMEZONE=America/New_York \
-GITHUB_USERNAME=aerybyte \
-python scripts/build_profile.py
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python scripts/build_profile.py --config profile.template.yml --offline
 ```
+
+Live local run:
+
+```bash
+GITHUB_USERNAME=yourname python scripts/build_profile.py --config profile.template.yml
+```
+
+profile.template.yml is the source of truth for setup and customization.
