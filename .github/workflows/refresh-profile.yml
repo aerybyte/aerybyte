@@ -3,10 +3,9 @@ name: Refresh profile card
 "on":
   workflow_dispatch:
   schedule:
-    # UTC times for Eastern Time (EDT/EST adjusted quarterly for DST)
-    # 04:00 UTC = 00:00 EDT, 10:00 UTC = 06:00 EDT, 16:00 UTC = 12:00 EDT, 22:00 UTC = 18:00 EDT
-    # (During EST: add 1 hour to each UTC time)
-    - cron: "0 4,10,16,22 * * *"
+    # Run at 12:00 AM, 6:00 AM, 12:00 PM, and 6:00 PM Eastern with DST handled automatically.
+    - cron: "0 */6 * * *"
+      timezone: "America/New_York"
   push:
     paths:
       - "profile.template.yml"

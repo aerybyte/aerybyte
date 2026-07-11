@@ -89,7 +89,7 @@ Workflow file:
 
 Schedule:
 
-- `0 */6 * * *` in `America/New_York`
+- `7 */6 * * *` in `America/New_York`
 - Runs at 12:00 AM, 6:00 AM, 12:00 PM, and 6:00 PM Eastern
 
 On scheduled runs, stats cache is invalidated and refreshed live, then cache is rewritten.
