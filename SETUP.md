@@ -89,8 +89,9 @@ Workflow file:
 
 Schedule:
 
-- `7 */6 * * *` in `America/New_York`
-- Runs at 12:00 AM, 6:00 AM, 12:00 PM, and 6:00 PM Eastern
+- `0 4,10,16,22 * * *` (UTC)
+- Maps to 12:00 AM, 6:00 AM, 12:00 PM, and 6:00 PM Eastern during EDT
+- During EST (winter), shift by +1 hour UTC if you want exact local-time alignment
 
 On scheduled runs, stats cache is invalidated and refreshed live, then cache is rewritten.
 

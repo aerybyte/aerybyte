@@ -3,9 +3,10 @@ name: Refresh profile card
 "on":
   workflow_dispatch:
   schedule:
-    # Run at 12:00 AM, 6:00 AM, 12:00 PM, and 6:00 PM Eastern with DST handled automatically.
-    - cron: "0 */6 * * *"
-      timezone: "America/New_York"
+    # GitHub schedule execution is UTC and can jitter; use explicit UTC hours
+    # that map to Eastern Daylight Time (EDT): 00:00/06:00/12:00/18:00 ET.
+    # 04:00/10:00/16:00/22:00 UTC == 00:00/06:00/12:00/18:00 EDT.
+    - cron: "0 4,10,16,22 * * *"
   push:
     paths:
       - "profile.template.yml"
