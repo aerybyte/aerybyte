@@ -51,14 +51,26 @@ jobs:
 
       - name: Commit refreshed assets
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PROFILE_START_DATE: ${{ secrets.PROFILE_START_DATE }}
         run: |
-          git add \
-            README.md \
-            assets/avatar.png \
-            assets/avatar-ascii.txt \
-            assets/github-stats-cache.json \
-            assets/profile-terminal-dark.svg \
-            assets/profile-terminal-light.svg
+          branch="${GITHUB_REF_NAME:-main}"
+
+          add_assets() {
+            git add \
+              README.md \
+              assets/avatar.png \
+              assets/avatar-ascii.txt \
+              assets/github-stats-cache.json \
+              assets/profile-terminal-dark.svg \
+              assets/profile-terminal-light.svg
+          }
+
+          # Fast-forward before committing so generated files are based on latest remote.
+          git pull --ff-only origin "$branch"
+
+          add_assets
 
           if git diff --cached --quiet; then
             echo "Profile assets are already current."
@@ -69,11 +81,20 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "chore: refresh profile card"
 
-          # Rebase after commit so generated unstaged changes cannot block pull.
-          git pull --rebase --autostash origin "${GITHUB_REF_NAME:-main}"
+          # Handle race where another run pushed between commit and push.
+          if ! git push origin "HEAD:$branch"; then
+            echo "Remote updated during push; regenerating from latest $branch and retrying once."
+            git fetch origin "$branch"
+            git reset --hard "origin/$branch"
 
-          # Handle race where another run pushed between pull and push.
-          if ! git push origin "HEAD:${GITHUB_REF_NAME:-main}"; then
-            git pull --rebase --autostash origin "${GITHUB_REF_NAME:-main}"
-            git push origin "HEAD:${GITHUB_REF_NAME:-main}"
+            python scripts/build_profile.py --config profile.template.yml
+            add_assets
+
+            if git diff --cached --quiet; then
+              echo "Latest remote already has current generated assets."
+              exit 0
+            fi
+
+            git commit -m "chore: refresh profile card"
+            git push origin "HEAD:$branch"
           fi
