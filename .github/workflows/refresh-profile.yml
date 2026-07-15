@@ -67,10 +67,16 @@ jobs:
               assets/profile-terminal-light.svg
           }
 
-          # Fast-forward before committing so generated files are based on latest remote.
-          git pull --ff-only origin "$branch"
+          regenerate_from_latest() {
+            # Always rebuild from latest remote head to avoid merge/rebase conflicts
+            # when generated files changed (for example after profile avatar updates).
+            git fetch origin "$branch"
+            git reset --hard "origin/$branch"
+            python scripts/build_profile.py --config profile.template.yml
+            add_assets
+          }
 
-          add_assets
+          regenerate_from_latest
 
           if git diff --cached --quiet; then
             echo "Profile assets are already current."
@@ -84,11 +90,7 @@ jobs:
           # Handle race where another run pushed between commit and push.
           if ! git push origin "HEAD:$branch"; then
             echo "Remote updated during push; regenerating from latest $branch and retrying once."
-            git fetch origin "$branch"
-            git reset --hard "origin/$branch"
-
-            python scripts/build_profile.py --config profile.template.yml
-            add_assets
+            regenerate_from_latest
 
             if git diff --cached --quiet; then
               echo "Latest remote already has current generated assets."
