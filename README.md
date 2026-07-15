@@ -1,32 +1,32 @@
 ```text
 +----------------------------------------------+   +------------------------------------------------------------+
-|      .s;          :.i;        ::       ,     |   | [personal]                                                 |
-|     ,s, ,;       .s i:       .2,        i.   |   | handle = @aerybyte                                         |
-|   :s  sA   ri   :s ;3,   ;  ..GA  r      2;  |   | role = software engineer · product builder                 |
-|  ,s ,A3.  .A    A..rr:   i.::i32  r.     :5  |   | human uptime = 22 years, 0 months, 2 days                  |
-| .s.iiA.   ;i   iX X.s; . i,i,X;Xi s,      X  |   | timezone = Eastern Time · EDT · UTC-04:00                  |
-| sr.:s     A.  :2,s  rA X ;;X;X  s,;rs        |   | pronouns = not disclosed                                   |
-| i  s  :  ,5  .s2i:  :3 X :iAXr  ,ir.XX       |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-|   s  2r  sX  rh5r;,  5,5X ;M2   .rMXisM,     |   | [top skills]                                               |
-|  ;i iH,  Xr .A2A     rrX3.:Mr     5s  sM     |   | languages = Python · TypeScript · JavaScript · C#          |
-|  r.:5A. .sX :XA3XAAX,.A:XX.3i  ,:,;X   A5    |   | frontend = React · Next.js · React Native                  |
-| ;;s:,2  ;iA 55:5rsi25 s; i2Xs :2hhMGSSSSMHs  |   | backend = Node.js · Supabase · PostgreSQL                  |
-| ;si ;5  ;;5:23.5;;:X5 :r  shs  ri:;;is5i2iM  |   | devops = Git · Docker · Kubernetes                         |
-| AA  .5 .;Ahsr3;5r;;sX ..   55  Xr;;;;;5 s;i  |   | cloud = Render · Sentry integration · Cloudflare           |
-| X    X. 3X h;A5 5si5        ,: iX:;;:3; rr   |   | analytics = Power BI · data scraping · data analysis       |
-|      s.;5X,;;XM ;h2; ..         2Xrr22 .s;   |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-|      r,5s5; ;XM                 i5552. ,A:   |   | [public github stats]                                      |
-|       3sX3r :;A3,                      r3    |   | repositories = 1                                           |
-|       ;.25r .;r23A;     ,,           :sHA    |   | commits = 41                                               |
-|         52r  ,rA;X22r:.          ,;rAXiXs .  |   | + / - = +4,003 / -1,253                                    |
-|         ;hs ,:.AirXr:.;XXXM552Ai.      A, r  |   | lines of code = 2,088                                      |
-|         .35 ,r r2r.  .Asrss,.         .A  r  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-|          ,Hr r: Mr                    i: .i  |   | [contact]                                                  |
-|           25 .s 5A.                   s. rs  |   | discord = @aeiree                                          |
-|           :M. r,sAX                  .s  hi  |   | email = erireilly9@gmail.com                               |
-|           si5. XX3 ,                 s. 22s  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-|           s,rs i5As  .;;::,,,,:,.   .s i2i2  |   | next refresh at = 2026-07-15 12:00 EDT                     |
-+----------------------------------------------+   +------------------------------------------------------------+
+|                 :AHSSSSSSMA,                 |   | [personal]                                                 |
+|               ;hGSSSSSSSSSSG2:               |   | handle = @aerybyte                                         |
+|            rHSSSSSSSSSSSSSSSSSS2             |   | role = software engineer · product builder                 |
+|           ;SSSSSSSSSSSSSSSSSSSSS2            |   | human uptime = 22 years, 0 months, 2 days                  |
+|          :SSSSSSSSSSSSSSSSSSSSSSSh           |   | timezone = Eastern Time · EDT · UTC-04:00                  |
+|          iGSSSSSSSSSSSSSSSSSSSSSSM:          |   | pronouns = not disclosed                                   |
+|          rSSSSSSSSSSSSSSSSSGSSGSSSX          |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+|          iGSSSSSSSSSMSSSHGS3HSMSSGr          |   | [top skills]                                               |
+|          .MSSSSSSSSShMSS2hHASGhGSM           |   | languages = Python · TypeScript · JavaScript · C#          |
+|           XSH3SSS3GSh3SSsMss3H3MG5           |   | frontend = React · Next.js · React Native                  |
+|           :Ssi;MM5HGGHr:,XiXiX:s5;           |   | backend = Node.js · Supabase · PostgreSQL                  |
+|           .Ah:;,; sH2i  r:is:,;Xs            |   | devops = Git · Docker · Kubernetes                         |
+|            .:sGSh   .;:.   .   :             |   | cloud = Render · Sentry integration · Cloudflare           |
+|             .3SSSX .;         ;.             |   | analytics = Power BI · data scraping · data analysis       |
+|            :HGS2,X,s:  ,ssi,:M2:             |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+|            hAGS5 i. ;r;.   ,;5Gr             |   | [public github stats]                                      |
+|           5SSHMr  .ii,   .si  MSSSShrr;,     |   | repositories = 1                                           |
+|          sGhhHHr    .;i;.,X   XMSGSM  ii;.   |   | commits = 43                                               |
+|      ,s22rXs;s;;3:      s;r2s A,hSGSr::::s   |   | + / - = +1,622 / -316                                      |
+|    ,ri:sr::::,::X2.    is  ;MA5i:SSSh.,,:i:  |   | lines of code = 2,088                                      |
+|   ; .s.;.ss:;;:;iA:rr:sSSSSSSShis3GSSr,:i;r  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+|  .r  .r;  rs:;:;;A;:,;A3SGSGsMSMshGSS5.r. s  |   | [contact]                                                  |
+|  i:   .is r,23;;:2M .sX.GSSSS2GSSSSSSS; , s  |   | discord = @aeiree                                          |
+|  ;,   .;irii,SMs;rGs;;s,SSSSSGHSSSSSSSX.: s  |   | email = erireilly9@gmail.com                               |
++----------------------------------------------+   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+                                                   | next refresh at = 2026-07-15 18:00 EDT                     |
+                                                   +------------------------------------------------------------+
 ```
 
 <!-- Generated by scripts/build_profile.py -->
