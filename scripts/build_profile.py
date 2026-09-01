@@ -41,6 +41,8 @@ GRAPHQL_URL = f"{API_ROOT}/graphql"
 API_VERSION = "2026-03-10"
 USER_AGENT = "aerybyte-dynamic-profile/1.0"
 ASCII_PALETTE = " .,:;irsXA253hMHGS#9B&@"
+README_EDGE_PALETTE = "s5H#"
+README_EDGE_THRESHOLD = 24
 STATS_MAX_ATTEMPTS = 8
 STATS_RETRY_DELAY_SECONDS = 2.0
 PROFILE_SCHEDULE_TIMEZONE = "America/New_York"
@@ -1262,6 +1264,14 @@ def inside_shape(column: int, row: int, width: int, rows: int, shape: str) -> bo
     return rounded_square_contains(column, row, width, rows)
 
 
+def outline_ascii_character(edge: int) -> str:
+    if edge < README_EDGE_THRESHOLD:
+        return " "
+    strength = (edge - README_EDGE_THRESHOLD) / (255 - README_EDGE_THRESHOLD)
+    index = min(len(README_EDGE_PALETTE) - 1, int(strength * len(README_EDGE_PALETTE)))
+    return README_EDGE_PALETTE[index]
+
+
 def avatar_to_ascii(
     image: Image.Image,
     width: int,
@@ -1309,10 +1319,11 @@ def avatar_to_ascii(
             density = 0.79 * (1 - intensity / 255.0) + 0.21 * (edge / 255.0)
             palette_index = min(len(ASCII_PALETTE) - 1, max(0, int(density * (len(ASCII_PALETTE) - 1))))
             char = ASCII_PALETTE[palette_index]
+            text_char = outline_ascii_character(edge)
             rgb = tuple(int(channel) for channel in colors.getpixel((column, row)))
             if char != " ":
                 cells.append(AsciiCell(column, row, char, rgb))
-            line.append(char)
+            line.append(text_char)
         text_rows.append("".join(line).rstrip())
     return cells, text_rows
 

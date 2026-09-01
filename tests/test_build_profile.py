@@ -7,6 +7,7 @@ from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
 import yaml
+from PIL import Image, ImageDraw
 
 from scripts import build_profile
 
@@ -101,6 +102,30 @@ class ReadmeRenderingTests(unittest.TestCase):
         self.assertIn("ASCII", markdown)
         self.assertIn("next scheduled slot = ", markdown)
         self.assertIn("\n```\n", markdown)
+
+
+class AvatarRenderingTests(unittest.TestCase):
+    def test_copyable_avatar_keeps_dark_regions_open_and_draws_their_edges(self) -> None:
+        image = Image.new("RGB", (128, 128), "white")
+        draw = ImageDraw.Draw(image)
+        draw.rectangle((24, 24, 104, 104), fill="black")
+
+        cells, rows = build_profile.avatar_to_ascii(
+            image,
+            width=40,
+            vertical_focus=0.5,
+            zoom=1.0,
+            shape="square",
+        )
+        grid = [row.ljust(40) for row in rows]
+
+        self.assertEqual(" ", grid[len(grid) // 2][20])
+        self.assertTrue(any(row[7:10].strip() for row in grid[5:25]))
+        self.assertLess(sum(character != " " for row in grid for character in row), 400)
+        center_cell = next(
+            cell for cell in cells if cell.row == len(rows) // 2 and cell.column == 20
+        )
+        self.assertNotEqual(" ", center_cell.char)
 
 
 if __name__ == "__main__":
