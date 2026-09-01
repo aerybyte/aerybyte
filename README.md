@@ -1,32 +1,32 @@
 ```text
 +----------------------------------------------+   +------------------------------------------------------------+
-| SSSH3MMHHGGGGHhhMMh553hMMMhMHGSSH3S3MSSSSSS  |   | [personal]                                                 |
-| SSSShhHGMMHMMhHGGGSSSSSSGGGGMMMSG3S5MSSSSSS  |   | handle = @aerybyte                                         |
-| SSSSSS5iHSSSSHHSSGMGHGSSSSSSGSSM5HG2MHGSSSS  |   | role = software engineer · product builder                 |
-| SSSSSM3HSSSSSGSSSSSSSSSSSSSSSSSSGSSSGHMhHSS  |   | human uptime = 22 years, 1 month, 19 days                  |
-| SSSSMhSSSSSGGGSSSSSGSSSSSSSSSSGGSGHHhHMhAhS  |   | timezone = Eastern Time · EDT · UTC-04:00                  |
-| SSG3SSSSHSSSSSHGSSSSSSSSSSSGGSSSSSSSGh3hGSS  |   | pronouns = not disclosed                                   |
-| SS3GGSSSSSSSSSSSSSSSSSSSSGSSSSSSSSSSSS5hGSS  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-| MhSSGGSSSGGSSSSSSSSSGSSSSGSSSSSSGSGGSMH5SSS  |   | [top skills]                                               |
-| 3GHGhGSSSHSSSSSSSGSSSSSSShSSSSSSSSSSSM5hGSS  |   | languages = Python · TypeScript · JavaScript · C#          |
-| A5ihSSSSSSSSSSSh5SSGHSGGSshSSSSSSSSGSSA5SSS  |   | frontend = React · Next.js · React Native                  |
-| G23SGSSSSSSSSM2H3GSSSGSSShi;MSSSSSSSSShhSSS  |   | backend = Node.js · Supabase · PostgreSQL                  |
-| S5GHGSSGSSSSHA552GGSSHGSS3siXSSSSSSSSSMMSSS  |   | devops = Git · Docker · Kubernetes                         |
-| ShH2GSSSSSSGAMhMhMSGGSSSSSSSSSMGSSHGSShAGSS  |   | cloud = Render · Sentry integration · Cloudflare           |
-| SGh2hSSSSGG;sSSSShhS,XSSGGiXX, X5;5;iGhSSSS  |   | analytics = Power BI · data scraping · data analysis       |
-| SSh2h5MS2MS; AHGh, si XGSSA  ::..hA,:3HSSSS  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-| SSSMGM2A.i3M   ,       :5MH,..  s;sXi3SSSSS  |   | [public github stats]                                      |
-| SSSSSSHA2:XA2 .                5H25MGSSSSSS  |   | repositories = 1                                           |
-| SSSSSSSH2rrsA2                AShGSSSSSSSSS  |   | commits = 234                                              |
-| SSSSSSSSSM333MX      :rr.    XSX5SSSSSSSSSS  |   | + / - = +1,774 / -317                                      |
-| SSSSSSSSSSSSSSGHM5r:.   .rhGSGAhhHSSSSSSSSS  |   | lines of code = 2,088                                      |
-| SSSSSSSSSSSSSSSSSS3GM32MGSMMAXsHh2HSSSSSSSS  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-| SSSSSSSSSSSSSSSGHMs:MX.   i2;XHHSSSSSSSSSSS  |   | [contact]                                                  |
-| SSSSSSSSSSSSSGMHHX  .rXsXAr  .3MMGSSSSSSSSS  |   | discord = @aeiree                                          |
-| SSSSSSSSSSSMMHGSHs    5XAA    XSGMMGSSSSSSS  |   | email = erireilly9@gmail.com                               |
-| SSSSSSSSH2MSSSGG3 ;i r;A X2,s:;353MHGMHSSSS  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-| SSSSSSSGMhSSSHMGSr ,rr A,i5X, .HSHM33M3HSSS  |   | next scheduled slot = 2026-09-01 18:00 EDT                 |
-+----------------------------------------------+   +------------------------------------------------------------+
+|     sss      ssssssssssssssss    s s         |   | [personal]                                                 |
+|     sssssssssss         ss ssss  s s         |   | handle = @aerybyte                                         |
+|       sss    ss   s            ss  sss       |   | role = software engineer · product builder                 |
+|      sss     s                        ss     |   | human uptime = 22 years, 1 month, 19 days                  |
+|    ss   s  ssss                s   ss    s   |   | timezone = Eastern Time · EDT · UTC-04:00                  |
+|    s    s     s                      sss     |   | pronouns = not disclosed                                   |
+|  ss s                             s   ss     |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| ss       s                           s s     |   | [top skills]                                               |
+| ssss           sss ss    ss           ss     |   | languages = Python · TypeScript · JavaScript · C#          |
+| sss           ssss       sss          ss     |   | frontend = React · Next.js · React Native                  |
+|  sss         ssss    s   ss s         ss     |   | backend = Node.js · Supabase · PostgreSQL                  |
+|  s s        ssssss            s       ss     |   | devops = Git · Docker · Kubernetes                         |
+|   sss    s ss    sssss    s s  ssssss s      |   | cloud = Render · Sentry integration · Cloudflare           |
+|   sssss ss s s  s  ss s   s  ss  sssss       |   | analytics = Power BI · data scraping · data analysis       |
+|       ssss5ssss                 ssssss       |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+|       sssssss                  sssss         |   | [public github stats]                                      |
+|          ssssss      sss     s ss            |   | repositories = 1                                           |
+|               sss          ss  ss            |   | commits = 236                                              |
+|                   sssssss sss5s sss          |   | + / - = +1,811 / -318                                      |
+|                   ssssss   ssss              |   | lines of code = 2,088                                      |
+|               ssss   ssssss   sss            |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+|            sss  ss    ssss    s  ss          |   | [contact]                                                  |
+|         sss    ss ss s s ss sssssss  ss      |   | discord = @aeiree                                          |
+|         ss   ss  s sss s ssss ss  ssssss     |   | email = erireilly9@gmail.com                               |
++----------------------------------------------+   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+                                                   | next scheduled slot = 2026-09-01 18:00 EDT                 |
+                                                   +------------------------------------------------------------+
 ```
 
 <!-- Generated by scripts/build_profile.py -->
