@@ -89,13 +89,13 @@ Workflow file:
 
 Schedule:
 
-- `17 */6 * * *` in `America/New_York`
-- Runs at 12:17 AM, 6:17 AM, 12:17 PM, and 6:17 PM Eastern
+- `0 */6 * * *` in `America/New_York`
+- Nominal slots are exactly 12:00 AM, 6:00 AM, 12:00 PM, and 6:00 PM Eastern
 - The IANA timezone keeps those local slots aligned through EDT and EST
 
 GitHub scheduled runs are best-effort and can start later than their nominal
-slot. Using `:17` avoids the especially busy start of the hour, reducing the
-chance of scheduler delays while preserving the six-hour cadence.
+slot. These exact top-of-hour slots can experience scheduler congestion, so a
+late Actions start does not mean the six-hour schedule itself changed.
 The workflow is anchored to `America/New_York`; if the profile display uses a
 different IANA timezone, the generator converts the next scheduled slot into
 that display timezone.

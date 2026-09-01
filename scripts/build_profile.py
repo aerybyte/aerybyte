@@ -1639,7 +1639,7 @@ def _section_header(title: str, width: int = 74) -> str:
     return f"{heading} {'-' * suffix}"
 
 
-def _next_refresh(local_zone: ZoneInfo, minute: int = 17, hour_step: int = 6) -> tuple[str, str]:
+def _next_refresh(local_zone: ZoneInfo, minute: int = 0, hour_step: int = 6) -> tuple[str, str]:
     schedule_zone = ZoneInfo(PROFILE_SCHEDULE_TIMEZONE)
     now = datetime.now(schedule_zone).replace(second=0, microsecond=0)
     candidate = now.replace(minute=minute)
