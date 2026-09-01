@@ -49,7 +49,7 @@ Manual values (you edit in profile.template.yml):
 Automatic values (cron updates these during each run):
 
 - GitHub stats (repositories, commits, + / - line churn, lines of code, scope)
-- next refresh timestamp
+- next scheduled slot timestamp
 - timezone suffix details (EST/EDT and UTC offset)
 - avatar-ascii render and SVG assets
 
@@ -89,9 +89,13 @@ Workflow file:
 
 Schedule:
 
-- `0 4,10,16,22 * * *` (UTC)
-- Maps to 12:00 AM, 6:00 AM, 12:00 PM, and 6:00 PM Eastern during EDT
-- During EST (winter), shift by +1 hour UTC if you want exact local-time alignment
+- `17 */6 * * *` in `America/New_York`
+- Runs at 12:17 AM, 6:17 AM, 12:17 PM, and 6:17 PM Eastern
+- The IANA timezone keeps those local slots aligned through EDT and EST
+
+GitHub scheduled runs are best-effort and can start later than their nominal
+slot. Using `:17` avoids the especially busy start of the hour, reducing the
+chance of scheduler delays while preserving the six-hour cadence.
 
 On scheduled runs, stats cache is invalidated and refreshed live, then cache is rewritten.
 

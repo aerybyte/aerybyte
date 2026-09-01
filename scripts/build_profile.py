@@ -1638,7 +1638,7 @@ def _section_header(title: str, width: int = 74) -> str:
     return f"{heading} {'-' * suffix}"
 
 
-def _next_refresh(local_zone: ZoneInfo, minute: int = 0, hour_step: int = 6) -> tuple[str, str]:
+def _next_refresh(local_zone: ZoneInfo, minute: int = 17, hour_step: int = 6) -> tuple[str, str]:
     now = datetime.now(local_zone).replace(second=0, microsecond=0)
     candidate = now.replace(minute=minute)
     if now.minute > minute:
@@ -1954,7 +1954,7 @@ def render_readme(
         if index < len(metadata_sections) - 1:
             metadata_ini_lines.append(divider)
     metadata_ini_lines.append(divider)
-    metadata_ini_lines.append(f"next refresh at = {next_at}")
+    metadata_ini_lines.append(f"next scheduled slot = {next_at}")
     metadata_box_lines = _box_lines(metadata_ini_lines, metadata_width, centered=False)
 
     if len(metadata_box_lines) < len(avatar_box_lines):
