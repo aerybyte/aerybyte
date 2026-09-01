@@ -96,6 +96,9 @@ Schedule:
 GitHub scheduled runs are best-effort and can start later than their nominal
 slot. Using `:17` avoids the especially busy start of the hour, reducing the
 chance of scheduler delays while preserving the six-hour cadence.
+The workflow is anchored to `America/New_York`; if the profile display uses a
+different IANA timezone, the generator converts the next scheduled slot into
+that display timezone.
 
 On scheduled runs, stats cache is invalidated and refreshed live, then cache is rewritten.
 

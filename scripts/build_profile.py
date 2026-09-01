@@ -43,6 +43,7 @@ USER_AGENT = "aerybyte-dynamic-profile/1.0"
 ASCII_PALETTE = " .,:;irsXA253hMHGS#9B&@"
 STATS_MAX_ATTEMPTS = 8
 STATS_RETRY_DELAY_SECONDS = 2.0
+PROFILE_SCHEDULE_TIMEZONE = "America/New_York"
 
 
 @dataclass(frozen=True)
@@ -1639,7 +1640,8 @@ def _section_header(title: str, width: int = 74) -> str:
 
 
 def _next_refresh(local_zone: ZoneInfo, minute: int = 17, hour_step: int = 6) -> tuple[str, str]:
-    now = datetime.now(local_zone).replace(second=0, microsecond=0)
+    schedule_zone = ZoneInfo(PROFILE_SCHEDULE_TIMEZONE)
+    now = datetime.now(schedule_zone).replace(second=0, microsecond=0)
     candidate = now.replace(minute=minute)
     if now.minute > minute:
         candidate = candidate + timedelta(hours=1)
@@ -1647,11 +1649,11 @@ def _next_refresh(local_zone: ZoneInfo, minute: int = 17, hour_step: int = 6) ->
     while candidate <= now or candidate.hour % hour_step != 0:
         candidate = candidate + timedelta(hours=1)
 
-    delta = candidate - now
+    delta = candidate.astimezone(timezone.utc) - now.astimezone(timezone.utc)
     total_minutes = max(0, int(delta.total_seconds() // 60))
     hours, minutes = divmod(total_minutes, 60)
     eta = f"{hours}h {minutes}m"
-    when = candidate.strftime("%Y-%m-%d %H:%M %Z")
+    when = candidate.astimezone(local_zone).strftime("%Y-%m-%d %H:%M %Z")
     return eta, when
 
 

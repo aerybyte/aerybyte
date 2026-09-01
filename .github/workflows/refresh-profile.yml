@@ -12,6 +12,7 @@ name: Refresh profile card
       - "profile.template.yml"
       - "requirements.txt"
       - "scripts/build_profile.py"
+      - "tests/**"
       - ".github/workflows/refresh-profile.yml"
 
 permissions:
@@ -41,6 +42,9 @@ jobs:
 
       - name: Install renderer dependencies
         run: python -m pip install --disable-pip-version-check -r requirements.txt
+
+      - name: Run renderer tests
+        run: python -m unittest discover -s tests -v
 
       - name: Rebuild profile card and ASCII portrait
         env:
