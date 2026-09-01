@@ -1,31 +1,31 @@
 ```text
 +----------------------------------------------+   +------------------------------------------------------------+
-|      .s;          :.i;        ::       ,     |   | [personal]                                                 |
-|     ,s, ,;       .s i:       .2,        i.   |   | handle = @aerybyte                                         |
-|   :s  sA   ri   :s ;3,   ;  ..GA  r      2;  |   | role = software engineer · product builder                 |
-|  ,s ,A3.  .A    A..rr:   i.::i32  r.     :5  |   | human uptime = 22 years, 1 month, 19 days                  |
-| .s.iiA.   ;i   iX X.s; . i,i,X;Xi s,      X  |   | timezone = Eastern Time · EDT · UTC-04:00                  |
-| sr.:s     A.  :2,s  rA X ;;X;X  s,;rs        |   | pronouns = not disclosed                                   |
-| i  s  :  ,5  .s2i:  :3 X :iAXr  ,ir.XX       |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-|   s  2r  sX  rh5r;,  5,5X ;M2   .rMXisM,     |   | [top skills]                                               |
-|  ;i iH,  Xr .A2A     rrX3.:Mr     5s  sM     |   | languages = Python · TypeScript · JavaScript · C#          |
-|  r.:5A. .sX :XA3XAAX,.A:XX.3i  ,:,;X   A5    |   | frontend = React · Next.js · React Native                  |
-| ;;s:,2  ;iA 55:5rsi25 s; i2Xs :2hhMGSSSSMHs  |   | backend = Node.js · Supabase · PostgreSQL                  |
-| ;si ;5  ;;5:23.5;;:X5 :r  shs  ri:;;is5i2iM  |   | devops = Git · Docker · Kubernetes                         |
-| AA  .5 .;Ahsr3;5r;;sX ..   55  Xr;;;;;5 s;i  |   | cloud = Render · Sentry integration · Cloudflare           |
-| X    X. 3X h;A5 5si5        ,: iX:;;:3; rr   |   | analytics = Power BI · data scraping · data analysis       |
-|      s.;5X,;;XM ;h2; ..         2Xrr22 .s;   |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-|      r,5s5; ;XM                 i5552. ,A:   |   | [public github stats]                                      |
-|       3sX3r :;A3,                      r3    |   | repositories = 1                                           |
-|       ;.25r .;r23A;     ,,           :sHA    |   | commits = 229                                              |
-|         52r  ,rA;X22r:.          ,;rAXiXs .  |   | + / - = +6,287 / -3,514                                    |
-|         ;hs ,:.AirXr:.;XXXM552Ai.      A, r  |   | lines of code = 2,088                                      |
-|         .35 ,r r2r.  .Asrss,.         .A  r  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-|          ,Hr r: Mr                    i: .i  |   | [contact]                                                  |
-|           25 .s 5A.                   s. rs  |   | discord = @aeiree                                          |
-|           :M. r,sAX                  .s  hi  |   | email = erireilly9@gmail.com                               |
-|           si5. XX3 ,                 s. 22s  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-|           s,rs i5As  .;;::,,,,:,.   .s i2i2  |   | next refresh at = 2026-09-01 12:00 EDT                     |
+| SSSH3MMHHGGGGHhhMMh553hMMMhMHGSSH3S3MSSSSSS  |   | [personal]                                                 |
+| SSSShhHGMMHMMhHGGGSSSSSSGGGGMMMSG3S5MSSSSSS  |   | handle = @aerybyte                                         |
+| SSSSSS5iHSSSSHHSSGMGHGSSSSSSGSSM5HG2MHGSSSS  |   | role = software engineer · product builder                 |
+| SSSSSM3HSSSSSGSSSSSSSSSSSSSSSSSSGSSSGHMhHSS  |   | human uptime = 22 years, 1 month, 19 days                  |
+| SSSSMhSSSSSGGGSSSSSGSSSSSSSSSSGGSGHHhHMhAhS  |   | timezone = Eastern Time · EDT · UTC-04:00                  |
+| SSG3SSSSHSSSSSHGSSSSSSSSSSSGGSSSSSSSGh3hGSS  |   | pronouns = not disclosed                                   |
+| SS3GGSSSSSSSSSSSSSSSSSSSSGSSSSSSSSSSSS5hGSS  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| MhSSGGSSSGGSSSSSSSSSGSSSSGSSSSSSGSGGSMH5SSS  |   | [top skills]                                               |
+| 3GHGhGSSSHSSSSSSSGSSSSSSShSSSSSSSSSSSM5hGSS  |   | languages = Python · TypeScript · JavaScript · C#          |
+| A5ihSSSSSSSSSSSh5SSGHSGGSshSSSSSSSSGSSA5SSS  |   | frontend = React · Next.js · React Native                  |
+| G23SGSSSSSSSSM2H3GSSSGSSShi;MSSSSSSSSShhSSS  |   | backend = Node.js · Supabase · PostgreSQL                  |
+| S5GHGSSGSSSSHA552GGSSHGSS3siXSSSSSSSSSMMSSS  |   | devops = Git · Docker · Kubernetes                         |
+| ShH2GSSSSSSGAMhMhMSGGSSSSSSSSSMGSSHGSShAGSS  |   | cloud = Render · Sentry integration · Cloudflare           |
+| SGh2hSSSSGG;sSSSShhS,XSSGGiXX, X5;5;iGhSSSS  |   | analytics = Power BI · data scraping · data analysis       |
+| SSh2h5MS2MS; AHGh, si XGSSA  ::..hA,:3HSSSS  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| SSSMGM2A.i3M   ,       :5MH,..  s;sXi3SSSSS  |   | [public github stats]                                      |
+| SSSSSSHA2:XA2 .                5H25MGSSSSSS  |   | repositories = 1                                           |
+| SSSSSSSH2rrsA2                AShGSSSSSSSSS  |   | commits = 230                                              |
+| SSSSSSSSSM333MX      :rr.    XSX5SSSSSSSSSS  |   | + / - = +6,299 / -3,526                                    |
+| SSSSSSSSSSSSSSGHM5r:.   .rhGSGAhhHSSSSSSSSS  |   | lines of code = 2,088                                      |
+| SSSSSSSSSSSSSSSSSS3GM32MGSMMAXsHh2HSSSSSSSS  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| SSSSSSSSSSSSSSSGHMs:MX.   i2;XHHSSSSSSSSSSS  |   | [contact]                                                  |
+| SSSSSSSSSSSSSGMHHX  .rXsXAr  .3MMGSSSSSSSSS  |   | discord = @aeiree                                          |
+| SSSSSSSSSSSMMHGSHs    5XAA    XSGMMGSSSSSSS  |   | email = erireilly9@gmail.com                               |
+| SSSSSSSSH2MSSSGG3 ;i r;A X2,s:;353MHGMHSSSS  |   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| SSSSSSSGMhSSSHMGSr ,rr A,i5X, .HSHM33M3HSSS  |   | next refresh at = 2026-09-01 18:00 EDT                     |
 +----------------------------------------------+   +------------------------------------------------------------+
 ```
 
