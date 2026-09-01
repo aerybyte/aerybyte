@@ -41,8 +41,17 @@ GRAPHQL_URL = f"{API_ROOT}/graphql"
 API_VERSION = "2026-03-10"
 USER_AGENT = "aerybyte-dynamic-profile/1.0"
 ASCII_PALETTE = " .,:;irsXA253hMHGS#9B&@"
-README_EDGE_PALETTE = "s5H#"
-README_EDGE_THRESHOLD = 24
+BRAILLE_EDGE_THRESHOLD = 28
+BRAILLE_DOTS = (
+    (0, 0, 0x01),
+    (0, 1, 0x02),
+    (0, 2, 0x04),
+    (1, 0, 0x08),
+    (1, 1, 0x10),
+    (1, 2, 0x20),
+    (0, 3, 0x40),
+    (1, 3, 0x80),
+)
 STATS_MAX_ATTEMPTS = 8
 STATS_RETRY_DELAY_SECONDS = 2.0
 PROFILE_SCHEDULE_TIMEZONE = "America/New_York"
@@ -1264,12 +1273,20 @@ def inside_shape(column: int, row: int, width: int, rows: int, shape: str) -> bo
     return rounded_square_contains(column, row, width, rows)
 
 
-def outline_ascii_character(edge: int) -> str:
-    if edge < README_EDGE_THRESHOLD:
-        return " "
-    strength = (edge - README_EDGE_THRESHOLD) / (255 - README_EDGE_THRESHOLD)
-    index = min(len(README_EDGE_PALETTE) - 1, int(strength * len(README_EDGE_PALETTE)))
-    return README_EDGE_PALETTE[index]
+def edge_image_to_braille(edge_image: Image.Image, width: int, rows: int) -> list[str]:
+    dot_map = edge_image.resize((width * 2, rows * 4), Image.Resampling.LANCZOS)
+    output: list[str] = []
+    for row in range(rows):
+        line: list[str] = []
+        for column in range(width):
+            mask = 0
+            for offset_x, offset_y, bit in BRAILLE_DOTS:
+                edge = int(dot_map.getpixel((column * 2 + offset_x, row * 4 + offset_y)))
+                if edge >= BRAILLE_EDGE_THRESHOLD:
+                    mask |= bit
+            line.append(chr(0x2800 + mask) if mask else " ")
+        output.append("".join(line).rstrip())
+    return output
 
 
 def avatar_to_ascii(
@@ -1281,6 +1298,7 @@ def avatar_to_ascii(
 ) -> tuple[list[AsciiCell], list[str]]:
     width = max(30, min(58, int(width)))
     rows = max(24, round(width * 0.76))
+    text_rows = max(18, round(width * 0.56))
     vertical_focus = clamp(float(vertical_focus), 0.0, 1.0)
     zoom = clamp(float(zoom), 1.0, 1.35)
     shape = shape.strip().lower()
@@ -1307,25 +1325,19 @@ def avatar_to_ascii(
     edges = edge_full.resize((width, rows), Image.Resampling.LANCZOS)
 
     cells: list[AsciiCell] = []
-    text_rows: list[str] = []
     for row in range(rows):
-        line: list[str] = []
         for column in range(width):
             if not inside_shape(column, row, width, rows, shape):
-                line.append(" ")
                 continue
             intensity = int(gray.getpixel((column, row)))
             edge = int(edges.getpixel((column, row)))
             density = 0.79 * (1 - intensity / 255.0) + 0.21 * (edge / 255.0)
             palette_index = min(len(ASCII_PALETTE) - 1, max(0, int(density * (len(ASCII_PALETTE) - 1))))
             char = ASCII_PALETTE[palette_index]
-            text_char = outline_ascii_character(edge)
             rgb = tuple(int(channel) for channel in colors.getpixel((column, row)))
             if char != " ":
                 cells.append(AsciiCell(column, row, char, rgb))
-            line.append(text_char)
-        text_rows.append("".join(line).rstrip())
-    return cells, text_rows
+    return cells, edge_image_to_braille(edge_full, width, text_rows)
 
 
 def offline_fixture(username: str, config: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -1778,6 +1790,22 @@ def _box_lines(lines: list[str], width: int, centered: bool = False) -> list[str
     return output
 
 
+def _is_braille_art(lines: list[str]) -> bool:
+    characters = [character for line in lines for character in line if character != " "]
+    return bool(characters) and all("\u2801" <= character <= "\u28ff" for character in characters)
+
+
+def _braille_box_lines(lines: list[str], width: int) -> list[str]:
+    blank = "\u2800"
+    output = ["⡏" + "⠉" * (width + 2) + "⢹"]
+    for line in lines:
+        content = str(line)[:width].replace(" ", blank)
+        content += blank * (width - len(content))
+        output.append("⡇" + blank + content + blank + "⢸")
+    output.append("⣇" + "⣀" * (width + 2) + "⣸")
+    return output
+
+
 def _metadata_rows_for_readme(profile: Mapping[str, Any], stats: Mapping[str, Any], config: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
     profile_config = config.get("profile") if isinstance(config.get("profile"), dict) else {}
     hidden_fields = _hidden_personal_fields(config)
@@ -1948,7 +1976,6 @@ def render_readme(
     # where dense ascii can look like stray punctuation near the divider.
     avatar_inner_width = max(1, left_width - 1)
     avatar_lines = [row[:avatar_inner_width].ljust(avatar_inner_width) + " " for row in square_rows]
-    avatar_box_lines = _box_lines(avatar_lines, left_width, centered=False)
 
     metadata_width = max(56, min(78, int(display.get("readme_info_column_width") or 64)))
     metadata_sections = _metadata_rows_for_readme(profile, stats, config)
@@ -1968,14 +1995,19 @@ def render_readme(
             metadata_ini_lines.append(divider)
     metadata_ini_lines.append(divider)
     metadata_ini_lines.append(f"next scheduled slot = {next_at}")
+    body_height = max(len(avatar_lines), len(metadata_ini_lines))
+    avatar_pad = body_height - len(avatar_lines)
+    avatar_lines = (
+        [""] * (avatar_pad // 2)
+        + avatar_lines
+        + [""] * (avatar_pad - avatar_pad // 2)
+    )
+    metadata_ini_lines.extend([""] * (body_height - len(metadata_ini_lines)))
+    if _is_braille_art(square_rows):
+        avatar_box_lines = _braille_box_lines(avatar_lines, left_width)
+    else:
+        avatar_box_lines = _box_lines(avatar_lines, left_width, centered=False)
     metadata_box_lines = _box_lines(metadata_ini_lines, metadata_width, centered=False)
-
-    if len(metadata_box_lines) < len(avatar_box_lines):
-        pad_count = len(avatar_box_lines) - len(metadata_box_lines)
-        empty_row = f"| {' ' * metadata_width} |"
-        metadata_box_lines = (
-            metadata_box_lines[:-1] + [empty_row] * pad_count + [metadata_box_lines[-1]]
-        )
 
     combined_lines: list[str] = []
     total_lines = max(len(avatar_box_lines), len(metadata_box_lines))

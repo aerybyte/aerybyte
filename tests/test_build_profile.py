@@ -103,9 +103,69 @@ class ReadmeRenderingTests(unittest.TestCase):
         self.assertIn("next scheduled slot = ", markdown)
         self.assertIn("\n```\n", markdown)
 
+    def test_terminal_card_aligns_both_bottom_borders_when_info_is_taller(self) -> None:
+        profile = {
+            "login": "aerybyte",
+            "created_at": "2004-07-13T00:00:00Z",
+        }
+        stats = {
+            "repo_count": 1,
+            "commits": 230,
+            "additions": 6299,
+            "deletions": 3526,
+            "lines_of_code": 2088,
+        }
+        config = {
+            "profile": {"role": "software engineer"},
+            "uptime": {
+                "source": "custom",
+                "start_date": "2004-07-13",
+                "timezone": "America/New_York",
+            },
+            "display": {},
+        }
+
+        markdown = build_profile.render_readme(profile, stats, config, ["portrait"])
+        card_lines = markdown.removeprefix("```text\n").split("\n```", 1)[0].splitlines()
+
+        self.assertTrue(card_lines[-1].startswith("+"))
+        self.assertIn("   +", card_lines[-1])
+
+    def test_braille_portrait_box_uses_one_glyph_family_for_stable_alignment(self) -> None:
+        profile = {
+            "login": "aerybyte",
+            "created_at": "2004-07-13T00:00:00Z",
+        }
+        stats = {
+            "repo_count": 1,
+            "commits": 230,
+            "additions": 6299,
+            "deletions": 3526,
+            "lines_of_code": 2088,
+        }
+        config = {
+            "profile": {"role": "software engineer"},
+            "uptime": {
+                "source": "custom",
+                "start_date": "2004-07-13",
+                "timezone": "America/New_York",
+            },
+            "display": {},
+        }
+
+        markdown = build_profile.render_readme(profile, stats, config, ["⠁ ⠈"])
+        card_lines = markdown.removeprefix("```text\n").split("\n```", 1)[0].splitlines()
+        separator_index = card_lines[0].find("   +")
+        left_panel = [line[:separator_index] for line in card_lines]
+
+        self.assertGreater(separator_index, 0)
+        self.assertTrue(
+            all("\u2800" <= character <= "\u28ff" for line in left_panel for character in line)
+        )
+
 
 class AvatarRenderingTests(unittest.TestCase):
-    def test_copyable_avatar_keeps_dark_regions_open_and_draws_their_edges(self) -> None:
+    def test_copyable_avatar_uses_braille_edges_without_filling_dark_regions(self) -> None:
         image = Image.new("RGB", (128, 128), "white")
         draw = ImageDraw.Draw(image)
         draw.rectangle((24, 24, 104, 104), fill="black")
@@ -118,12 +178,23 @@ class AvatarRenderingTests(unittest.TestCase):
             shape="square",
         )
         grid = [row.ljust(40) for row in rows]
+        rendered_characters = [character for row in rows for character in row if character != " "]
 
         self.assertEqual(" ", grid[len(grid) // 2][20])
         self.assertTrue(any(row[7:10].strip() for row in grid[5:25]))
         self.assertLess(sum(character != " " for row in grid for character in row), 400)
+        self.assertTrue(rendered_characters)
+        self.assertTrue(all("\u2801" <= character <= "\u28ff" for character in rendered_characters))
+        self.assertGreater(len(set(rendered_characters)), 4)
+        active_dots = sum(
+            bin(ord(character) - 0x2800).count("1") for character in rendered_characters
+        )
+        self.assertGreater(active_dots, 400)
+        self.assertLess(active_dots, 600)
         center_cell = next(
-            cell for cell in cells if cell.row == len(rows) // 2 and cell.column == 20
+            cell
+            for cell in cells
+            if cell.row == max(candidate.row for candidate in cells) // 2 and cell.column == 20
         )
         self.assertNotEqual(" ", center_cell.char)
 
