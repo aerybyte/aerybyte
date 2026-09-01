@@ -153,7 +153,7 @@ class ReadmeRenderingTests(unittest.TestCase):
             "display": {},
         }
 
-        markdown = build_profile.render_readme(profile, stats, config, ["⠁ ⠈"])
+        markdown = build_profile.render_readme(profile, stats, config, ["⠁⠀⠈"])
         card_lines = markdown.removeprefix("```text\n").split("\n```", 1)[0].splitlines()
         separator_index = card_lines[0].find("   +")
         left_panel = [line[:separator_index] for line in card_lines]
@@ -197,6 +197,47 @@ class AvatarRenderingTests(unittest.TestCase):
             if cell.row == max(candidate.row for candidate in cells) // 2 and cell.column == 20
         )
         self.assertNotEqual(" ", center_cell.char)
+
+    def test_copyable_avatar_masks_braille_dots_to_the_configured_shape(self) -> None:
+        image = Image.new("RGB", (128, 128), "white")
+        draw = ImageDraw.Draw(image)
+        for offset in range(8, 128, 16):
+            draw.line((offset, 0, offset, 127), fill="black", width=4)
+            draw.line((0, offset, 127, offset), fill="black", width=4)
+
+        _cells, square_rows = build_profile.avatar_to_ascii(image, 40, 0.5, 1.0, "square")
+        _cells, rounded_rows = build_profile.avatar_to_ascii(
+            image, 40, 0.5, 1.0, "rounded_square"
+        )
+        _cells, circle_rows = build_profile.avatar_to_ascii(image, 40, 0.5, 1.0, "circle")
+
+        self.assertNotEqual(square_rows, rounded_rows)
+        self.assertNotEqual(square_rows, circle_rows)
+        dot_positions = (
+            (0, 0, 0x01),
+            (0, 1, 0x02),
+            (0, 2, 0x04),
+            (1, 0, 0x08),
+            (1, 1, 0x10),
+            (1, 2, 0x20),
+            (0, 3, 0x40),
+            (1, 3, 0x80),
+        )
+        dot_width = 80
+        dot_rows = len(circle_rows) * 4
+        for row, line in enumerate(circle_rows):
+            for column, character in enumerate(line):
+                if character == " ":
+                    continue
+                mask = ord(character) - 0x2800
+                for offset_x, offset_y, bit in dot_positions:
+                    if not mask & bit:
+                        continue
+                    x = column * 2 + offset_x
+                    y = row * 4 + offset_y
+                    normalized_x = (x + 0.5 - dot_width / 2) / (dot_width / 2)
+                    normalized_y = (y + 0.5 - dot_rows / 2) / (dot_rows / 2)
+                    self.assertLessEqual(normalized_x**2 + normalized_y**2, 0.97)
 
 
 if __name__ == "__main__":

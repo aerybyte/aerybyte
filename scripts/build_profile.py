@@ -1273,7 +1273,12 @@ def inside_shape(column: int, row: int, width: int, rows: int, shape: str) -> bo
     return rounded_square_contains(column, row, width, rows)
 
 
-def edge_image_to_braille(edge_image: Image.Image, width: int, rows: int) -> list[str]:
+def edge_image_to_braille(
+    edge_image: Image.Image,
+    width: int,
+    rows: int,
+    shape: str,
+) -> list[str]:
     dot_map = edge_image.resize((width * 2, rows * 4), Image.Resampling.LANCZOS)
     output: list[str] = []
     for row in range(rows):
@@ -1281,7 +1286,11 @@ def edge_image_to_braille(edge_image: Image.Image, width: int, rows: int) -> lis
         for column in range(width):
             mask = 0
             for offset_x, offset_y, bit in BRAILLE_DOTS:
-                edge = int(dot_map.getpixel((column * 2 + offset_x, row * 4 + offset_y)))
+                dot_x = column * 2 + offset_x
+                dot_y = row * 4 + offset_y
+                if not inside_shape(dot_x, dot_y, width * 2, rows * 4, shape):
+                    continue
+                edge = int(dot_map.getpixel((dot_x, dot_y)))
                 if edge >= BRAILLE_EDGE_THRESHOLD:
                     mask |= bit
             line.append(chr(0x2800 + mask) if mask else " ")
@@ -1337,7 +1346,7 @@ def avatar_to_ascii(
             rgb = tuple(int(channel) for channel in colors.getpixel((column, row)))
             if char != " ":
                 cells.append(AsciiCell(column, row, char, rgb))
-    return cells, edge_image_to_braille(edge_full, width, text_rows)
+    return cells, edge_image_to_braille(edge_full, width, text_rows, shape)
 
 
 def offline_fixture(username: str, config: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -1791,7 +1800,12 @@ def _box_lines(lines: list[str], width: int, centered: bool = False) -> list[str
 
 
 def _is_braille_art(lines: list[str]) -> bool:
-    characters = [character for line in lines for character in line if character != " "]
+    characters = [
+        character
+        for line in lines
+        for character in line
+        if character not in {" ", "\u2800"}
+    ]
     return bool(characters) and all("\u2801" <= character <= "\u28ff" for character in characters)
 
 
