@@ -42,11 +42,9 @@ GRAPHQL_URL = f"{API_ROOT}/graphql"
 API_VERSION = "2026-03-10"
 USER_AGENT = "aerybyte-dynamic-profile/1.0"
 ASCII_PALETTE = " .,:;irsXA253hMHGS#9B&@"
-BRAILLE_EDGE_THRESHOLD = 20
-BRAILLE_EDGE_THRESHOLD_MAX = 42
-BRAILLE_BACKGROUND_PERCENTILE = 0.98
-BRAILLE_BACKGROUND_MARGIN = 4
+BRAILLE_EDGE_THRESHOLD = 128
 BRAILLE_MIN_COMPONENT_SIZE = 12
+BRAILLE_CENTER_COMPONENT_SIZE = 6
 BRAILLE_DOTS = (
     (0, 0, 0x01),
     (0, 1, 0x02),
@@ -1304,33 +1302,19 @@ def edge_image_to_braille(
     return output
 
 
-def adaptive_braille_edge_threshold(edge_image: Image.Image) -> int:
-    """Raise the edge cutoff when the avatar background contains colored grain."""
-    frame_width = max(1, edge_image.width // 6)
-    background_samples = sorted(
-        int(edge_image.getpixel((x, y)))
-        for y in range(edge_image.height)
-        for x in range(edge_image.width)
-        if x < frame_width or x >= edge_image.width - frame_width
-    )
-    percentile_index = round(
-        (len(background_samples) - 1) * BRAILLE_BACKGROUND_PERCENTILE
-    )
-    background_noise = background_samples[percentile_index]
-    return min(
-        BRAILLE_EDGE_THRESHOLD_MAX,
-        max(BRAILLE_EDGE_THRESHOLD, background_noise + BRAILLE_BACKGROUND_MARGIN),
-    )
-
-
 def remove_isolated_edge_components(
     edge_image: Image.Image,
     threshold: int,
     minimum_size: int = BRAILLE_MIN_COMPONENT_SIZE,
 ) -> Image.Image:
-    """Remove disconnected speckles while retaining coherent portrait strokes."""
+    """Remove border clutter and tiny speckles while retaining centered detail."""
     cleaned = edge_image.copy()
     pixels = cleaned.load()
+    center_left = cleaned.width // 4
+    center_right = cleaned.width * 3 // 4
+    center_top = cleaned.height // 5
+    center_bottom = cleaned.height * 4 // 5
+    frame_margin = max(1, cleaned.width // 10)
     candidates = {
         (x, y)
         for y in range(cleaned.height)
@@ -1352,7 +1336,18 @@ def remove_isolated_edge_components(
                     candidates.remove(neighbor)
                     component.add(neighbor)
                     pending.append(neighbor)
-        if len(component) < minimum_size:
+        required_size = (
+            BRAILLE_CENTER_COMPONENT_SIZE
+            if any(
+                center_left <= x < center_right and center_top <= y < center_bottom
+                for x, y in component
+            )
+            else minimum_size
+        )
+        reaches_interior = any(
+            frame_margin <= x < cleaned.width - frame_margin for x, _y in component
+        )
+        if len(component) < required_size or not reaches_interior:
             for x, y in component:
                 pixels[x, y] = 0
     return cleaned
@@ -1360,7 +1355,11 @@ def remove_isolated_edge_components(
 
 def color_edge_map(image: Image.Image) -> Image.Image:
     """Return a denoised edge map that retains boundaries between different hues."""
-    smoothed = image.convert("RGB").filter(ImageFilter.GaussianBlur(0.8))
+    smoothed = (
+        image.convert("RGB")
+        .filter(ImageFilter.MedianFilter(3))
+        .filter(ImageFilter.GaussianBlur(0.8))
+    )
     width, height = smoothed.size
     channel_images = smoothed.split()
     channels = [channel.load() for channel in channel_images]
@@ -1395,22 +1394,64 @@ def color_edge_map(image: Image.Image) -> Image.Image:
             magnitudes[y][x] = strongest_magnitude
             directions[y][x] = strongest_direction
 
-    edge_map = Image.new("L", (width, height), 0)
-    edge_pixels = edge_map.load()
+    normalized = [[0.0] * width for _ in range(height)]
+    for y in range(height):
+        for x in range(width):
+            neighborhood = [
+                magnitudes[neighbor_y][neighbor_x]
+                for neighbor_y in range(max(0, y - 3), min(height, y + 4))
+                for neighbor_x in range(max(0, x - 3), min(width, x + 4))
+            ]
+            local_max = max(neighborhood)
+            normalized[y][x] = (
+                magnitudes[y][x]
+                if local_max < 30
+                else min(255.0, magnitudes[y][x] / local_max * 255.0)
+            )
+
+    thinned = [[0.0] * width for _ in range(height)]
     for y in range(1, height - 1):
         for x in range(1, width - 1):
             direction = directions[y][x]
-            magnitude = magnitudes[y][x]
+            magnitude = normalized[y][x]
             if direction < 22.5 or direction >= 157.5:
-                neighbors = (magnitudes[y][x - 1], magnitudes[y][x + 1])
+                neighbors = (normalized[y][x - 1], normalized[y][x + 1])
             elif direction < 67.5:
-                neighbors = (magnitudes[y - 1][x - 1], magnitudes[y + 1][x + 1])
+                neighbors = (normalized[y - 1][x - 1], normalized[y + 1][x + 1])
             elif direction < 112.5:
-                neighbors = (magnitudes[y - 1][x], magnitudes[y + 1][x])
+                neighbors = (normalized[y - 1][x], normalized[y + 1][x])
             else:
-                neighbors = (magnitudes[y - 1][x + 1], magnitudes[y + 1][x - 1])
+                neighbors = (normalized[y - 1][x + 1], normalized[y + 1][x - 1])
             if magnitude >= max(neighbors):
-                edge_pixels[x, y] = min(255, round(magnitude))
+                thinned[y][x] = magnitude
+
+    strong = {
+        (x, y)
+        for y in range(height)
+        for x in range(width)
+        if thinned[y][x] >= 38
+    }
+    weak = {
+        (x, y)
+        for y in range(height)
+        for x in range(width)
+        if 19 <= thinned[y][x] < 38
+    }
+    edge_map = Image.new("L", (width, height), 0)
+    edge_pixels = edge_map.load()
+    pending = list(strong)
+    for x, y in strong:
+        edge_pixels[x, y] = 255
+    while pending:
+        x, y = pending.pop()
+        for neighbor_y in range(max(0, y - 1), min(height, y + 2)):
+            for neighbor_x in range(max(0, x - 1), min(width, x + 2)):
+                neighbor = (neighbor_x, neighbor_y)
+                if neighbor not in weak:
+                    continue
+                weak.remove(neighbor)
+                edge_pixels[neighbor_x, neighbor_y] = 255
+                pending.append(neighbor)
     return edge_map
 
 
@@ -1464,17 +1505,16 @@ def avatar_to_ascii(
             rgb = tuple(int(channel) for channel in colors.getpixel((column, row)))
             if char != " ":
                 cells.append(AsciiCell(column, row, char, rgb))
-    edge_threshold = adaptive_braille_edge_threshold(braille_edges)
     braille_edges = remove_isolated_edge_components(
         braille_edges,
-        edge_threshold,
+        BRAILLE_EDGE_THRESHOLD,
     )
     return cells, edge_image_to_braille(
         braille_edges,
         width,
         text_rows,
         shape,
-        threshold=edge_threshold,
+        threshold=BRAILLE_EDGE_THRESHOLD,
     )
 
 

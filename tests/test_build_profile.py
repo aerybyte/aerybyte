@@ -165,6 +165,34 @@ class ReadmeRenderingTests(unittest.TestCase):
 
 
 class AvatarRenderingTests(unittest.TestCase):
+    def test_low_contrast_landscape_survives_speckle_cleanup(self) -> None:
+        image = Image.new("RGB", (160, 160), (70, 95, 120))
+        draw = ImageDraw.Draw(image)
+        for x, y in (
+            (8, 10),
+            (28, 25),
+            (52, 12),
+            (84, 30),
+            (116, 14),
+            (142, 34),
+        ):
+            draw.rectangle((x, y, x + 4, y + 4), fill=(165, 105, 75))
+
+        draw.polygon(
+            ((8, 136), (48, 82), (76, 116), (112, 64), (152, 136)),
+            fill=(112, 137, 162),
+        )
+
+        _cells, rows = build_profile.avatar_to_ascii(image, 40, 0.5, 1.0, "square")
+        grid = [row.ljust(40) for row in rows]
+        sky_cells = sum(character != " " for row in grid[:6] for character in row)
+        landscape_cells = sum(
+            character != " " for row in grid[7:20] for character in row[2:38]
+        )
+
+        self.assertLess(sky_cells, 8)
+        self.assertGreater(landscape_cells, 45)
+
     def test_isolated_colored_background_speckles_are_removed(self) -> None:
         image = Image.new("RGB", (160, 160), (22, 42, 76))
         draw = ImageDraw.Draw(image)
