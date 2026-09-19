@@ -165,6 +165,47 @@ class ReadmeRenderingTests(unittest.TestCase):
 
 
 class AvatarRenderingTests(unittest.TestCase):
+    def test_color_texture_does_not_overwhelm_copyable_portrait(self) -> None:
+        image = Image.new("RGB", (128, 128))
+        pixels = image.load()
+        for y in range(128):
+            for x in range(128):
+                pixels[x, y] = (18, 38, 88) if (x + y) % 2 else (45, 72, 125)
+
+        draw = ImageDraw.Draw(image)
+        draw.ellipse((32, 18, 96, 112), fill=(210, 175, 135))
+        draw.pieslice((28, 12, 100, 80), 180, 360, fill=(32, 18, 55))
+        draw.line((48, 67, 56, 67), fill=(15, 15, 20), width=3)
+        draw.line((72, 67, 80, 67), fill=(15, 15, 20), width=3)
+        draw.arc((57, 78, 72, 92), 0, 180, fill=(130, 40, 45), width=2)
+
+        _cells, rows = build_profile.avatar_to_ascii(image, 40, 0.5, 1.0, "square")
+        grid = [row.ljust(40) for row in rows]
+        background_cells = sum(
+            character != " " for row in grid[2:19] for character in row[:8] + row[-8:]
+        )
+        portrait_cells = sum(
+            character != " " for row in grid for character in row[10:30]
+        )
+
+        self.assertLess(background_cells, 24)
+        self.assertGreater(portrait_cells, 100)
+
+    def test_color_edge_map_preserves_equal_luminance_hue_boundaries(self) -> None:
+        image = Image.new("RGB", (80, 88), (255, 0, 0))
+        ImageDraw.Draw(image).rectangle((40, 0, 79, 87), fill=(0, 130, 0))
+        self.assertEqual(
+            Image.new("RGB", (1, 1), (255, 0, 0)).convert("L").getpixel((0, 0)),
+            Image.new("RGB", (1, 1), (0, 130, 0)).convert("L").getpixel((0, 0)),
+        )
+
+        edges = build_profile.color_edge_map(image)
+
+        boundary_strength = max(edges.getpixel((x, y)) for x in (39, 40) for y in range(4, 84))
+        flat_strength = max(edges.getpixel((x, 44)) for x in (10, 20, 60, 70))
+        self.assertGreater(boundary_strength, 80)
+        self.assertLess(flat_strength, 8)
+
     def test_copyable_avatar_uses_braille_edges_without_filling_dark_regions(self) -> None:
         image = Image.new("RGB", (128, 128), "white")
         draw = ImageDraw.Draw(image)
@@ -189,8 +230,8 @@ class AvatarRenderingTests(unittest.TestCase):
         active_dots = sum(
             bin(ord(character) - 0x2800).count("1") for character in rendered_characters
         )
-        self.assertGreater(active_dots, 400)
-        self.assertLess(active_dots, 600)
+        self.assertGreater(active_dots, 180)
+        self.assertLess(active_dots, 260)
         center_cell = next(
             cell
             for cell in cells

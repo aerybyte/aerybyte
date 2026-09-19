@@ -19,6 +19,7 @@ import json
 import hashlib
 import html
 import io
+import math
 import os
 import re
 import subprocess
@@ -41,7 +42,7 @@ GRAPHQL_URL = f"{API_ROOT}/graphql"
 API_VERSION = "2026-03-10"
 USER_AGENT = "aerybyte-dynamic-profile/1.0"
 ASCII_PALETTE = " .,:;irsXA253hMHGS#9B&@"
-BRAILLE_EDGE_THRESHOLD = 28
+BRAILLE_EDGE_THRESHOLD = 20
 BRAILLE_DOTS = (
     (0, 0, 0x01),
     (0, 1, 0x02),
@@ -1298,6 +1299,62 @@ def edge_image_to_braille(
     return output
 
 
+def color_edge_map(image: Image.Image) -> Image.Image:
+    """Return a denoised edge map that retains boundaries between different hues."""
+    smoothed = image.convert("RGB").filter(ImageFilter.GaussianBlur(0.8))
+    width, height = smoothed.size
+    channel_images = smoothed.split()
+    channels = [channel.load() for channel in channel_images]
+    magnitudes = [[0.0] * width for _ in range(height)]
+    directions = [[0.0] * width for _ in range(height)]
+
+    for y in range(1, height - 1):
+        for x in range(1, width - 1):
+            strongest_magnitude = 0.0
+            strongest_direction = 0.0
+            for pixels in channels:
+                gradient_x = (
+                    -pixels[x - 1, y - 1]
+                    + pixels[x + 1, y - 1]
+                    - 2 * pixels[x - 1, y]
+                    + 2 * pixels[x + 1, y]
+                    - pixels[x - 1, y + 1]
+                    + pixels[x + 1, y + 1]
+                ) / 4.0
+                gradient_y = (
+                    -pixels[x - 1, y - 1]
+                    - 2 * pixels[x, y - 1]
+                    - pixels[x + 1, y - 1]
+                    + pixels[x - 1, y + 1]
+                    + 2 * pixels[x, y + 1]
+                    + pixels[x + 1, y + 1]
+                ) / 4.0
+                magnitude = math.hypot(gradient_x, gradient_y)
+                if magnitude > strongest_magnitude:
+                    strongest_magnitude = magnitude
+                    strongest_direction = math.degrees(math.atan2(gradient_y, gradient_x)) % 180
+            magnitudes[y][x] = strongest_magnitude
+            directions[y][x] = strongest_direction
+
+    edge_map = Image.new("L", (width, height), 0)
+    edge_pixels = edge_map.load()
+    for y in range(1, height - 1):
+        for x in range(1, width - 1):
+            direction = directions[y][x]
+            magnitude = magnitudes[y][x]
+            if direction < 22.5 or direction >= 157.5:
+                neighbors = (magnitudes[y][x - 1], magnitudes[y][x + 1])
+            elif direction < 67.5:
+                neighbors = (magnitudes[y - 1][x - 1], magnitudes[y + 1][x + 1])
+            elif direction < 112.5:
+                neighbors = (magnitudes[y - 1][x], magnitudes[y + 1][x])
+            else:
+                neighbors = (magnitudes[y - 1][x + 1], magnitudes[y + 1][x - 1])
+            if magnitude >= max(neighbors):
+                edge_pixels[x, y] = min(255, round(magnitude))
+    return edge_map
+
+
 def avatar_to_ascii(
     image: Image.Image,
     width: int,
@@ -1330,6 +1387,8 @@ def avatar_to_ascii(
     colors = fitted.resize((width, rows), Image.Resampling.LANCZOS)
     gray_full = ImageOps.autocontrast(ImageOps.grayscale(fitted), cutoff=1)
     edge_full = ImageOps.autocontrast(gray_full.filter(ImageFilter.FIND_EDGES), cutoff=2)
+    braille_source = fitted.resize((width * 2, text_rows * 4), Image.Resampling.LANCZOS)
+    braille_edges = color_edge_map(braille_source)
     gray = gray_full.resize((width, rows), Image.Resampling.LANCZOS)
     edges = edge_full.resize((width, rows), Image.Resampling.LANCZOS)
 
@@ -1346,7 +1405,7 @@ def avatar_to_ascii(
             rgb = tuple(int(channel) for channel in colors.getpixel((column, row)))
             if char != " ":
                 cells.append(AsciiCell(column, row, char, rgb))
-    return cells, edge_image_to_braille(edge_full, width, text_rows, shape)
+    return cells, edge_image_to_braille(braille_edges, width, text_rows, shape)
 
 
 def offline_fixture(username: str, config: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
