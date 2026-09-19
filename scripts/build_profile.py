@@ -1461,10 +1461,11 @@ def avatar_to_ascii(
     vertical_focus: float,
     zoom: float,
     shape: str,
+    text_row_ratio: float = 0.56,
 ) -> tuple[list[AsciiCell], list[str]]:
     width = max(30, min(58, int(width)))
     rows = max(24, round(width * 0.76))
-    text_rows = max(18, round(width * 0.56))
+    text_rows = max(18, round(width * clamp(float(text_row_ratio), 0.42, 0.80)))
     vertical_focus = clamp(float(vertical_focus), 0.0, 1.0)
     zoom = clamp(float(zoom), 1.0, 1.35)
     shape = shape.strip().lower()
@@ -1595,6 +1596,8 @@ def profile_rows(profile: Mapping[str, Any], config: Mapping[str, Any]) -> list[
     if profile_config.get("show_website", False):
         website = clean(profile.get("blog"), 58).removeprefix("https://").removeprefix("http://").rstrip("/")
         rows.append(("website", website, "accent2"))
+    if profile_config.get("card_title") and profile_config.get("discord"):
+        rows.append(("discord", clean(profile_config.get("discord"), 58), "accent2"))
     return [
         (label, value, color)
         for label, value, color in rows
@@ -1645,7 +1648,9 @@ def build_sections(
     stats: Mapping[str, Any],
     config: Mapping[str, Any],
 ) -> list[tuple[str, list[tuple[str, str, str]]]]:
-    result = [("personal", profile_rows(profile, config))]
+    profile_config = config.get("profile") if isinstance(config.get("profile"), dict) else {}
+    profile_title = clean(profile_config.get("card_title") or "personal", 28)
+    result = [(profile_title, profile_rows(profile, config))]
     result.extend(custom_sections(config))
     result.append(("public github stats", github_rows(profile, stats, config)))
     return [(name, rows) for name, rows in result if rows]
@@ -1670,7 +1675,10 @@ def render_svg(
     total_rows = sum(len(rows) for _, rows in sections)
     section_count = len(sections)
 
-    width = 1280
+    width = 1600
+    card_width = width - 40
+    header_right = width - 62
+    header_rule_right = width - 34
     content_top = 98
     section_header = 32
     row_height = 29
@@ -1680,19 +1688,20 @@ def render_svg(
 
     art_panel_x = 38
     art_panel_y = 92
-    art_panel_width = 410
-    divider_x = 468
-    art_x = 62
+    art_panel_width = 480
+    art_center_x = art_panel_x + art_panel_width / 2
+    divider_x = art_panel_x + art_panel_width + 20
+    art_x = 82
     art_y = 111
-    cell_width = min(7.25, 360.0 / max(1, ascii_width))
+    cell_width = min(7.25, 420.0 / max(1, ascii_width))
     cell_height = cell_width * 1.48
     art_rows = max((cell.row for cell in cells), default=0) + 1
     art_height = art_rows * cell_height
     name_y = art_y + art_height + 45
     art_panel_height = max(530, name_y - art_panel_y + 42)
 
-    right_x = 510
-    value_x = 704
+    right_x = divider_x + 42
+    value_x = right_x + 230
     right_end = width - 52
     name = clean(profile.get("name") or profile.get("login") or "aery", 34)
     login = clean(profile.get("login") or "aerybyte", 30)
@@ -1732,7 +1741,7 @@ def render_svg(
   <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="125%">
     <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity="{theme.shadow_opacity}"/>
   </filter>
-  <clipPath id="cardClip"><rect x="20" y="20" width="1240" height="{height - 40}" rx="22"/></clipPath>
+  <clipPath id="cardClip"><rect x="20" y="20" width="{card_width}" height="{height - 40}" rx="22"/></clipPath>
 </defs>
 <style>
   .mono {{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }}
@@ -1745,18 +1754,18 @@ def render_svg(
 </style>
 <rect width="{width}" height="{height}" fill="url(#pageGradient)"/>
 <g filter="url(#cardShadow)">
-  <rect x="20" y="20" width="1240" height="{height - 40}" rx="22" fill="{theme.panel}" stroke="{theme.border}" stroke-width="1.5"/>
+  <rect x="20" y="20" width="{card_width}" height="{height - 40}" rx="22" fill="{theme.panel}" stroke="{theme.border}" stroke-width="1.5"/>
 </g>
 <g clip-path="url(#cardClip)">
-  <rect x="20" y="20" width="1240" height="4" fill="url(#rimGradient)"/>
-  <circle cx="218" cy="275" r="255" fill="url(#portraitGlow)"/>
+  <rect x="20" y="20" width="{card_width}" height="4" fill="url(#rimGradient)"/>
+  <circle cx="{art_center_x:.1f}" cy="275" r="275" fill="url(#portraitGlow)"/>
 </g>
 <circle cx="49" cy="50" r="6" fill="{theme.danger}"/>
 <circle cx="70" cy="50" r="6" fill="{theme.warning}"/>
 <circle cx="91" cy="50" r="6" fill="{theme.success}"/>
 <text x="116" y="56" class="mono" font-size="14" fill="{theme.muted}">@{xml(login)} / README.md</text>
-<text x="1218" y="56" class="mono" font-size="13" text-anchor="end" fill="{theme.muted}">{xml(top_status)}<tspan class="cursor" fill="{accent_2}">_</tspan></text>
-<line x1="34" y1="76" x2="1246" y2="76" stroke="{theme.border}"/>
+<text x="{header_right}" y="56" class="mono" font-size="13" text-anchor="end" fill="{theme.muted}">{xml(top_status)}<tspan class="cursor" fill="{accent_2}">_</tspan></text>
+<line x1="34" y1="76" x2="{header_rule_right}" y2="76" stroke="{theme.border}"/>
 <rect x="{art_panel_x}" y="{art_panel_y}" width="{art_panel_width}" height="{art_panel_height:.1f}" rx="18" fill="{theme.panel_alt}" stroke="{theme.border}"/>
 '''
     ]
@@ -1770,8 +1779,8 @@ def render_svg(
 
     parts.append(
         f'''
-<text x="243" y="{name_y:.1f}" class="mono" font-size="26" font-weight="780" text-anchor="middle" fill="{theme.text}">{xml(name)}</text>
-<text x="243" y="{name_y + 28:.1f}" class="mono" font-size="15" text-anchor="middle" fill="{accent_2}">@{xml(login)}</text>
+<text x="{art_center_x:.1f}" y="{name_y:.1f}" class="mono" font-size="26" font-weight="780" text-anchor="middle" fill="{theme.text}">{xml(name)}</text>
+<text x="{art_center_x:.1f}" y="{name_y + 28:.1f}" class="mono" font-size="15" text-anchor="middle" fill="{accent_2}">@{xml(login)}</text>
 <line x1="{divider_x}" y1="93" x2="{divider_x}" y2="{height - 53}" stroke="{theme.border}"/>
 '''
     )
@@ -1947,14 +1956,6 @@ def _center_no_overflow(text: str, width: int) -> str:
     return clipped.center(width)
 
 
-def _split_top_skills(value: Any, limit: int = 4) -> str:
-    raw = _plain(value)
-    if not raw:
-        return ""
-    tokens = [token.strip() for token in re.split(r"\s*[·,|]\s*", raw) if token.strip()]
-    return " · ".join(tokens[: max(1, limit)])
-
-
 def _box_lines(lines: list[str], width: int, centered: bool = False) -> list[str]:
     top = f"+{'-' * (width + 2)}+"
     output = [top]
@@ -1991,52 +1992,29 @@ def _braille_box_lines(lines: list[str], width: int) -> list[str]:
 
 def _metadata_rows_for_readme(profile: Mapping[str, Any], stats: Mapping[str, Any], config: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
     profile_config = config.get("profile") if isinstance(config.get("profile"), dict) else {}
-    hidden_fields = _hidden_personal_fields(config)
     sections_config = config.get("sections") if isinstance(config.get("sections"), dict) else {}
     stack_config = sections_config.get("stack") if isinstance(sections_config.get("stack"), dict) else {}
-
-    uptime_config = config.get("uptime") if isinstance(config.get("uptime"), dict) else {}
-    local_zone = profile_timezone(config)
-    timezone_display = str(uptime_config.get("timezone_display") or getattr(local_zone, "key", "Eastern Time"))
     discord_handle = clean(os.getenv("PROFILE_DISCORD") or profile_config.get("discord"), 40)
     personal_email = clean(os.getenv("PROFILE_EMAIL") or profile_config.get("email"), 60)
-
-    uptime_label = clean(uptime_config.get("label") or "human uptime", 22)
-    source = str(uptime_config.get("source") or "github_account").strip().lower()
-    precision = str(uptime_config.get("precision") or "days")
-    if source == "custom":
-        start_value = str(os.getenv("PROFILE_START_DATE") or uptime_config.get("start_date") or "").strip()
-    else:
-        start_value = str(profile.get("created_at") or "").strip()
-    try:
-        uptime_value = format_uptime(start_value, local_zone, precision)
-    except Exception:
-        uptime_value = "live sync pending"
-
-    profile_rows = [
-        f"handle: @{_plain(profile.get('login') or 'aerybyte')}",
-        f"role: {_plain(profile_config.get('role') or 'software engineer · product builder')}",
-        f"{uptime_label}: {uptime_value}",
-        f"timezone: {format_timezone_value(local_zone, timezone_display)}",
-    ]
-    additional_fields = profile_config.get("additional_fields") if isinstance(profile_config.get("additional_fields"), dict) else {}
-    for key, value in additional_fields.items():
-        label = _plain(key)
-        rendered = _plain(value)
-        if label and rendered and label.strip().lower() not in hidden_fields:
-            profile_rows.append(f"{label}: {rendered}")
-    profile_rows = [
-        row for row in profile_rows if row.partition(":")[0].strip().lower() not in hidden_fields
+    personal_rows = [
+        f"{_plain(label)}: {_plain(value)}"
+        for label, value, _color in profile_rows(profile, config)
     ]
     skills_rows = [
-        f"languages: {_split_top_skills(stack_config.get('languages'), 4)}",
-        f"frontend: {_split_top_skills(stack_config.get('frontend'), 3)}",
-        f"backend: {_split_top_skills(stack_config.get('backend & data'), 3)}",
-        f"devops: {_split_top_skills(stack_config.get('testing & devops'), 3)}",
-        f"cloud: {_split_top_skills(stack_config.get('cloud/security/obs'), 3)}",
-        f"analytics: {_split_top_skills(stack_config.get('analytics'), 3)}",
+        f"{_plain(label)}: {_plain(value)}"
+        for label, value in stack_config.items()
+        if _plain(label) and _plain(value)
     ]
-    skills_rows = [row for row in skills_rows if row.rsplit(":", 1)[-1].strip()]
+    systems_config = (
+        sections_config.get("current systems")
+        if isinstance(sections_config.get("current systems"), dict)
+        else {}
+    )
+    systems_rows = [
+        f"{_plain(label)}: {_plain(value)}"
+        for label, value in systems_config.items()
+        if _plain(label) and _plain(value)
+    ]
     live_rows = [
         f"repositories: {format_number(stats.get('repo_count')) or 'live sync pending'}",
         f"commits: {format_number(stats.get('commits')) or 'live sync pending'}",
@@ -2048,7 +2026,7 @@ def _metadata_rows_for_readme(profile: Mapping[str, Any], stats: Mapping[str, An
         f"lines of code: {format_number(stats.get('lines_of_code')) or 'live sync pending'}",
     ]
     contact_rows: list[str] = []
-    if discord_handle:
+    if discord_handle and not profile_config.get("card_title"):
         contact_rows.append(f"discord: {discord_handle}")
     if personal_email:
         contact_rows.append(f"email: {personal_email}")
@@ -2059,11 +2037,11 @@ def _metadata_rows_for_readme(profile: Mapping[str, Any], stats: Mapping[str, An
         if label and rendered:
             contact_rows.append(f"{label}: {rendered}")
 
-    output = [
-        ("personal", profile_rows),
-        ("top skills", skills_rows),
-        ("public github stats", live_rows),
-    ]
+    profile_title = _plain(profile_config.get("card_title") or "personal")
+    output = [(profile_title, personal_rows), ("top skills", skills_rows)]
+    if systems_rows:
+        output.append(("current systems", systems_rows))
+    output.append(("public github stats", live_rows))
     if contact_rows:
         output.append(("contact", contact_rows))
     return output
@@ -2312,6 +2290,7 @@ def main() -> int:
         float(display.get("avatar_vertical_focus") or 0.5),
         float(display.get("avatar_zoom") or 1.0),
         str(display.get("ascii_shape") or "rounded_square"),
+        float(display.get("readme_avatar_rows_ratio") or 0.56),
     )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)

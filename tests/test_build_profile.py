@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+import xml.etree.ElementTree as ET
 from datetime import datetime as RealDateTime, timezone
 from pathlib import Path
 from unittest.mock import patch
@@ -74,6 +75,70 @@ class RefreshScheduleTests(unittest.TestCase):
 
 
 class ReadmeRenderingTests(unittest.TestCase):
+    def test_profile_card_renders_the_approved_engineering_profile(self) -> None:
+        profile = {
+            "login": "aeiree",
+            "blog": "https://aeiree.com/",
+            "created_at": "2004-07-13T00:00:00Z",
+        }
+        stats = {
+            "repo_count": 1,
+            "commits": 315,
+            "additions": 2190,
+            "deletions": 327,
+            "lines_of_code": 2629,
+        }
+        config = {
+            "profile": {
+                "card_title": "eri reilly",
+                "role": "Software Engineer",
+                "discord": "@aeiree",
+                "email": "",
+                "additional_fields": {
+                    "focus": "Full-Stack Systems · Applied AI · Infrastructure",
+                    "education": "Rutgers University — CS + Marketing",
+                },
+                "show_website": True,
+            },
+            "sections": {
+                "stack": {
+                    "languages": "TypeScript · Python · JavaScript · SQL",
+                    "frontend": "React · React Native · Vite · Capacitor · Next.js",
+                    "backend": "Node.js · PostgreSQL · Supabase · PostGIS · SQLite",
+                    "ai": "RAG · Open WebUI · LLM Tool Calling · NLP",
+                    "infra": "Docker · Kubernetes · gVisor · GitHub Actions · UniFi",
+                    "testing": "Jest · Supertest · Playwright · Appium",
+                    "platforms": "SAP · Firebase · GitHub · GitLab · Jira · New Relic",
+                },
+                "current systems": {
+                    "WOE": "SAP-connected ordering · web / iOS / Android",
+                    "Wilbur": "Internal RAG assistant · secure AI workbench",
+                    "ATP": "Geospatial social platform · React Native / PostGIS",
+                },
+            },
+            "uptime": {
+                "source": "custom",
+                "start_date": "2004-07-13",
+                "timezone": "America/New_York",
+            },
+            "display": {},
+        }
+
+        markdown = build_profile.render_readme(profile, stats, config, ["portrait"])
+
+        self.assertIn("[eri reilly]", markdown)
+        self.assertIn("focus = Full-Stack Systems · Applied AI · Infrastructure", markdown)
+        self.assertIn("education = Rutgers University — CS + Marketing", markdown)
+        self.assertIn("website = aeiree.com", markdown)
+        self.assertIn("discord = @aeiree", markdown)
+        self.assertIn(
+            "frontend = React · React Native · Vite · Capacitor · Next.js", markdown
+        )
+        self.assertIn("ai = RAG · Open WebUI · LLM Tool Calling · NLP", markdown)
+        self.assertIn("[current systems]", markdown)
+        self.assertIn("WOE = SAP-connected ordering · web / iOS / Android", markdown)
+        self.assertNotIn("email =", markdown)
+
     def test_terminal_card_remains_copyable_fenced_text(self) -> None:
         profile = {
             "login": "aerybyte",
@@ -165,6 +230,60 @@ class ReadmeRenderingTests(unittest.TestCase):
 
 
 class AvatarRenderingTests(unittest.TestCase):
+    def test_svg_gives_the_expanded_profile_and_portrait_room_to_render(self) -> None:
+        profile = {
+            "login": "aeiree",
+            "name": "eri reilly",
+            "blog": "https://aeiree.com/",
+            "created_at": "2004-07-13T00:00:00Z",
+        }
+        stats = {
+            "repo_count": 1,
+            "commits": 315,
+            "additions": 2190,
+            "deletions": 327,
+            "lines_of_code": 2629,
+        }
+        repository_root = Path(__file__).resolve().parents[1]
+        config = yaml.safe_load(
+            (repository_root / "profile.template.yml").read_text(encoding="utf-8")
+        )
+        cells = [
+            build_profile.AsciiCell(0, 0, "A", (255, 255, 255)),
+            build_profile.AsciiCell(53, 0, "B", (255, 255, 255)),
+        ]
+
+        svg = build_profile.render_svg(
+            build_profile.DARK, profile, stats, config, cells, ascii_width=54
+        )
+        root = ET.fromstring(svg)
+        namespace = "{http://www.w3.org/2000/svg}"
+        text_nodes = {
+            node.text: float(node.attrib["x"])
+            for node in root.iter(f"{namespace}text")
+            if node.text in {"A", "B"}
+        }
+        portrait_panel = next(
+            node
+            for node in root.iter(f"{namespace}rect")
+            if node.attrib.get("x") == "38" and node.attrib.get("y") == "92"
+        )
+
+        self.assertGreaterEqual(float(root.attrib["width"]), 1500)
+        self.assertGreaterEqual(float(portrait_panel.attrib["width"]), 480)
+        self.assertGreaterEqual(text_nodes["B"] - text_nodes["A"], 380)
+
+    def test_braille_portrait_uses_a_near_square_dot_canvas(self) -> None:
+        image = Image.new("RGB", (160, 160), "white")
+        ImageDraw.Draw(image).ellipse((24, 16, 136, 152), outline="black", width=5)
+
+        _cells, rows = build_profile.avatar_to_ascii(
+            image, 54, 0.5, 1.0, "square", text_row_ratio=0.50
+        )
+
+        self.assertEqual(27, len(rows))
+        self.assertEqual(54 * 2, len(rows) * 4)
+
     def test_low_contrast_landscape_survives_speckle_cleanup(self) -> None:
         image = Image.new("RGB", (160, 160), (70, 95, 120))
         draw = ImageDraw.Draw(image)

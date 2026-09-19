@@ -10,25 +10,28 @@ profile:
   github_username: ""
 
   # Your headline role text
-  role: "software engineer · product builder"
+  card_title: "eri reilly"
+  role: "Software Engineer"
 
   # Optional short line under role (blank hides it)
   tagline: ""
 
-  # Contact metadata shown in [contact]
+  # Contact metadata; named cards surface Discord in the profile block.
   discord: "@aeiree"
-  email: "erireilly9@gmail.com"
+  email: ""
 
-  # Add any extra personal fields you want to appear in [personal].
+  # Add any extra fields you want to appear in the named profile block.
   # Example: pronouns, location, portfolio, current_focus, etc.
   additional_fields:
-    pronouns: "not disclosed"
-    portfolio: ""
-    current_focus: ""
+    focus: "Full-Stack Systems · Applied AI · Infrastructure"
+    education: "Rutgers University — CS + Marketing"
 
   # Optional: hide built-in personal fields by label.
   # Example values: role, tagline, human uptime, timezone, pronouns
-  disabled_fields: []
+  disabled_fields:
+    - handle
+    - human uptime
+    - timezone
 
   # Optional: add more contact fields under [contact].
   # Example: linkedin, website, x, telegram
@@ -37,17 +40,23 @@ profile:
 
   # Optional fields that can be shown if toggled below
   show_location: false
-  show_website: false
+  show_website: true
 
 sections:
   # This section powers [top skills] in README
   stack:
-    languages: "Python · TypeScript · JavaScript · C# · Java · C · SQL"
-    frontend: "React · Next.js · React Native · TypeScript · HTML · CSS · Tailwind CSS"
-    backend & data: "Node.js · Supabase · PostgreSQL · MongoDB Atlas · Snowflake · MySQL · REST APIs · migrations · authN/authZ"
-    testing & devops: "Git · Docker · Kubernetes · CI/CD · GitHub Actions · Vitest · Playwright · mobile simulator testing · security smoke tests · secrets scanning"
-    cloud/security/obs: "Render · Sentry integration · Cloudflare · CORS/security headers · native error logging · privacy-safe admin tooling"
-    analytics: "Power BI · data scraping · data analysis · SQL querying"
+    languages: "TypeScript · Python · JavaScript · SQL"
+    frontend: "React · React Native · Vite · Capacitor · Next.js"
+    backend: "Node.js · PostgreSQL · Supabase · PostGIS · SQLite"
+    ai: "RAG · Open WebUI · LLM Tool Calling · NLP"
+    infra: "Docker · Kubernetes · gVisor · GitHub Actions · UniFi"
+    testing: "Jest · Supertest · Playwright · Appium"
+    platforms: "SAP · Firebase · GitHub · GitLab · Jira · New Relic"
+
+  current systems:
+    WOE: "SAP-connected ordering · web / iOS / Android"
+    Wilbur: "Internal RAG assistant · secure AI workbench"
+    ATP: "Geospatial social platform · React Native / PostGIS"
 
 uptime:
   label: "human uptime"
@@ -75,21 +84,21 @@ display:
 
   # Order of metadata sections in README/SVG
   readme_section_order:
-    - personal
-    - top skills
+    - eri reilly
+    - stack
+    - current systems
     - github stats
-    - contact
 
-  readme_ascii_column_width: 44
-  readme_info_column_width: 58
-  readme_avatar_rows_ratio: 0.56
+  readme_ascii_column_width: 55
+  readme_info_column_width: 68
+  readme_avatar_rows_ratio: 0.50
   readme_compact: true
   show_public_email: false
 
   # Avatar source controls
   avatar_path: ""
   avatar_cache_path: "assets/avatar.png"
-  ascii_width: 46
+  ascii_width: 54
   avatar_vertical_focus: 0.50
   avatar_zoom: 1.25
   ascii_shape: "square" # rounded_square, circle, or square
