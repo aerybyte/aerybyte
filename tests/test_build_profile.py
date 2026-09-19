@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+import base64
+import io
+import re
+import subprocess
+import sys
+import tempfile
 import unittest
 import xml.etree.ElementTree as ET
 from datetime import datetime as RealDateTime, timezone
@@ -19,6 +25,10 @@ class FrozenDateTime(RealDateTime):
     @classmethod
     def now(cls, tz: ZoneInfo | None = None) -> "FrozenDateTime":
         return cls.fromtimestamp(cls.frozen_utc.timestamp(), tz=tz)
+
+
+def copyable_card(markdown: str) -> str:
+    return markdown.split("```text\n", 1)[1].split("\n```", 1)[0]
 
 
 class RefreshScheduleTests(unittest.TestCase):
@@ -75,6 +85,38 @@ class RefreshScheduleTests(unittest.TestCase):
 
 
 class ReadmeRenderingTests(unittest.TestCase):
+    def test_readme_uses_theme_images_with_a_collapsed_copyable_fallback(self) -> None:
+        profile = {
+            "login": "aeiree",
+            "created_at": "2004-07-13T00:00:00Z",
+        }
+        stats = {
+            "repo_count": 1,
+            "commits": 230,
+            "additions": 6299,
+            "deletions": 3526,
+            "lines_of_code": 2088,
+        }
+        config = {
+            "profile": {"role": "software engineer"},
+            "uptime": {
+                "source": "custom",
+                "start_date": "2004-07-13",
+                "timezone": "America/New_York",
+            },
+            "display": {},
+        }
+
+        markdown = build_profile.render_readme(profile, stats, config, ["portrait"])
+
+        self.assertTrue(markdown.startswith("<picture>\n"))
+        self.assertIn('media="(prefers-color-scheme: dark)"', markdown)
+        self.assertIn("./assets/profile-terminal-dark.svg", markdown)
+        self.assertIn("./assets/profile-terminal-light.svg", markdown)
+        self.assertIn("<details>", markdown)
+        self.assertIn("<summary>Copyable text version</summary>", markdown)
+        self.assertIn("```text\n", markdown)
+
     def test_profile_card_renders_the_approved_engineering_profile(self) -> None:
         profile = {
             "login": "aeiree",
@@ -163,10 +205,11 @@ class ReadmeRenderingTests(unittest.TestCase):
 
         markdown = build_profile.render_readme(profile, stats, config, ["ASCII"])
 
-        self.assertTrue(markdown.startswith("```text\n"))
-        self.assertIn("ASCII", markdown)
-        self.assertIn("next scheduled slot = ", markdown)
-        self.assertIn("\n```\n", markdown)
+        fallback = copyable_card(markdown)
+
+        self.assertIn("<details>", markdown)
+        self.assertIn("ASCII", fallback)
+        self.assertIn("next scheduled slot = ", fallback)
 
     def test_terminal_card_aligns_both_bottom_borders_when_info_is_taller(self) -> None:
         profile = {
@@ -191,7 +234,7 @@ class ReadmeRenderingTests(unittest.TestCase):
         }
 
         markdown = build_profile.render_readme(profile, stats, config, ["portrait"])
-        card_lines = markdown.removeprefix("```text\n").split("\n```", 1)[0].splitlines()
+        card_lines = copyable_card(markdown).splitlines()
 
         self.assertTrue(card_lines[-1].startswith("+"))
         self.assertIn("   +", card_lines[-1])
@@ -219,7 +262,7 @@ class ReadmeRenderingTests(unittest.TestCase):
         }
 
         markdown = build_profile.render_readme(profile, stats, config, ["⠁⠀⠈"])
-        card_lines = markdown.removeprefix("```text\n").split("\n```", 1)[0].splitlines()
+        card_lines = copyable_card(markdown).splitlines()
         separator_index = card_lines[0].find("   +")
         left_panel = [line[:separator_index] for line in card_lines]
 
@@ -230,6 +273,46 @@ class ReadmeRenderingTests(unittest.TestCase):
 
 
 class AvatarRenderingTests(unittest.TestCase):
+    def test_generator_embeds_the_full_color_avatar_in_the_svg(self) -> None:
+        repository_root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            temporary_root = Path(directory)
+            avatar_path = temporary_root / "avatar.png"
+            avatar = Image.new("RGB", (8, 8), (255, 0, 0))
+            ImageDraw.Draw(avatar).rectangle((4, 0, 7, 7), fill=(0, 0, 255))
+            avatar.save(avatar_path)
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(repository_root / "scripts/build_profile.py"),
+                    "--config",
+                    str(repository_root / "profile.template.yml"),
+                    "--output-dir",
+                    str(temporary_root / "assets"),
+                    "--username",
+                    "aeiree",
+                    "--avatar",
+                    str(avatar_path),
+                    "--offline",
+                ],
+                cwd=temporary_root,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            svg = (temporary_root / "assets/profile-terminal-dark.svg").read_text(
+                encoding="utf-8"
+            )
+            match = re.search(r'href="data:image/png;base64,([^"]+)"', svg)
+
+            self.assertIsNotNone(match)
+            embedded = Image.open(io.BytesIO(base64.b64decode(match.group(1))))
+            self.assertEqual((255, 0, 0), embedded.getpixel((0, 0))[:3])
+            self.assertEqual((0, 0, 255), embedded.getpixel((7, 0))[:3])
+            self.assertNotIn('class="ascii"', svg)
+
     def test_svg_gives_the_expanded_profile_and_portrait_room_to_render(self) -> None:
         profile = {
             "login": "aeiree",
@@ -248,30 +331,26 @@ class AvatarRenderingTests(unittest.TestCase):
         config = yaml.safe_load(
             (repository_root / "profile.template.yml").read_text(encoding="utf-8")
         )
-        cells = [
-            build_profile.AsciiCell(0, 0, "A", (255, 255, 255)),
-            build_profile.AsciiCell(53, 0, "B", (255, 255, 255)),
-        ]
+        avatar_uri = build_profile.avatar_data_uri(Image.new("RGB", (8, 8), "red"))
 
-        svg = build_profile.render_svg(
-            build_profile.DARK, profile, stats, config, cells, ascii_width=54
-        )
+        svg = build_profile.render_svg(build_profile.DARK, profile, stats, config, avatar_uri)
         root = ET.fromstring(svg)
         namespace = "{http://www.w3.org/2000/svg}"
-        text_nodes = {
-            node.text: float(node.attrib["x"])
-            for node in root.iter(f"{namespace}text")
-            if node.text in {"A", "B"}
-        }
         portrait_panel = next(
             node
             for node in root.iter(f"{namespace}rect")
             if node.attrib.get("x") == "38" and node.attrib.get("y") == "92"
         )
+        portrait = next(
+            node
+            for node in root.iter(f"{namespace}image")
+            if node.attrib.get("href", "").startswith("data:image/png;base64,")
+        )
 
         self.assertGreaterEqual(float(root.attrib["width"]), 1500)
         self.assertGreaterEqual(float(portrait_panel.attrib["width"]), 480)
-        self.assertGreaterEqual(text_nodes["B"] - text_nodes["A"], 380)
+        self.assertGreaterEqual(float(portrait.attrib["width"]), 420)
+        self.assertEqual("xMidYMid slice", portrait.attrib["preserveAspectRatio"])
 
     def test_braille_portrait_uses_a_near_square_dot_canvas(self) -> None:
         image = Image.new("RGB", (160, 160), "white")

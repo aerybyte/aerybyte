@@ -15,6 +15,7 @@ and refreshes the generated assets on a timezone-aware cron schedule.
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import hashlib
 import html
@@ -1213,6 +1214,12 @@ def save_avatar_cache(image: Image.Image, path: Path) -> bool:
     return True
 
 
+def avatar_data_uri(image: Image.Image) -> str:
+    buffer = io.BytesIO()
+    image.convert("RGB").save(buffer, format="PNG", optimize=True)
+    return f"data:image/png;base64,{base64.b64encode(buffer.getvalue()).decode('ascii')}"
+
+
 def fetch_avatar(
     profile: Mapping[str, Any],
     override_path: Path | None,
@@ -1661,8 +1668,7 @@ def render_svg(
     profile: Mapping[str, Any],
     stats: Mapping[str, Any],
     config: Mapping[str, Any],
-    cells: list[AsciiCell],
-    ascii_width: int,
+    avatar_uri: str,
 ) -> str:
     theme_config = config.get("theme") if isinstance(config.get("theme"), dict) else {}
     accent = parse_hex(theme_config.get("accent"), "#f97316")
@@ -1691,14 +1697,11 @@ def render_svg(
     art_panel_width = 480
     art_center_x = art_panel_x + art_panel_width / 2
     divider_x = art_panel_x + art_panel_width + 20
-    art_x = 82
-    art_y = 111
-    cell_width = min(7.25, 420.0 / max(1, ascii_width))
-    cell_height = cell_width * 1.48
-    art_rows = max((cell.row for cell in cells), default=0) + 1
-    art_height = art_rows * cell_height
-    name_y = art_y + art_height + 45
-    art_panel_height = max(530, name_y - art_panel_y + 42)
+    portrait_size = 420
+    portrait_x = art_center_x - portrait_size / 2
+    portrait_y = 112
+    name_y = portrait_y + portrait_size + 45
+    art_panel_height = max(570, name_y - art_panel_y + 42)
 
     right_x = divider_x + 42
     value_x = right_x + 230
@@ -1722,7 +1725,7 @@ def render_svg(
     parts: list[str] = [
         f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">
 <title id="title">Dynamic GitHub profile card for @{xml(login)}</title>
-<desc id="desc">A terminal-style profile with color ASCII art generated from the current GitHub avatar and refreshed public statistics.</desc>
+<desc id="desc">A terminal-style profile with the current full-color GitHub avatar and refreshed public statistics.</desc>
 <defs>
   <linearGradient id="pageGradient" x1="0" y1="0" x2="1" y2="1">
     <stop offset="0%" stop-color="{theme.page}"/>
@@ -1742,10 +1745,10 @@ def render_svg(
     <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity="{theme.shadow_opacity}"/>
   </filter>
   <clipPath id="cardClip"><rect x="20" y="20" width="{card_width}" height="{height - 40}" rx="22"/></clipPath>
+  <clipPath id="avatarClip"><rect x="{portrait_x:.1f}" y="{portrait_y}" width="{portrait_size}" height="{portrait_size}" rx="28"/></clipPath>
 </defs>
 <style>
   .mono {{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }}
-  .ascii {{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 11.2px; font-weight: 700; }}
   .section {{ font-size: 15px; font-weight: 760; letter-spacing: 0.07em; }}
   .label {{ font-size: 15px; font-weight: 650; }}
   .value {{ font-size: 15px; font-weight: 540; }}
@@ -1767,15 +1770,10 @@ def render_svg(
 <text x="{header_right}" y="56" class="mono" font-size="13" text-anchor="end" fill="{theme.muted}">{xml(top_status)}<tspan class="cursor" fill="{accent_2}">_</tspan></text>
 <line x1="34" y1="76" x2="{header_rule_right}" y2="76" stroke="{theme.border}"/>
 <rect x="{art_panel_x}" y="{art_panel_y}" width="{art_panel_width}" height="{art_panel_height:.1f}" rx="18" fill="{theme.panel_alt}" stroke="{theme.border}"/>
+<image href="{xml(avatar_uri)}" x="{portrait_x:.1f}" y="{portrait_y}" width="{portrait_size}" height="{portrait_size}" preserveAspectRatio="xMidYMid slice" clip-path="url(#avatarClip)"/>
+<rect x="{portrait_x:.1f}" y="{portrait_y}" width="{portrait_size}" height="{portrait_size}" rx="28" fill="none" stroke="{theme.border}" stroke-width="2"/>
 '''
     ]
-
-    for cell in cells:
-        x = art_x + cell.column * cell_width
-        y = art_y + (cell.row + 1) * cell_height
-        parts.append(
-            f'<text x="{x:.2f}" y="{y:.2f}" class="ascii" fill="{legible_avatar_color(cell.rgb, theme)}">{xml(cell.char)}</text>'
-        )
 
     parts.append(
         f'''
@@ -1808,7 +1806,7 @@ def render_svg(
         f'''
 <line x1="{right_x}" y1="{height - 56}" x2="{right_end}" y2="{height - 56}" stroke="{theme.border}"/>
 <text x="{right_x}" y="{height - 31}" class="mono" font-size="12.5" fill="{theme.muted}">refreshed {xml(refreshed)} · {xml(source)}</text>
-<text x="{right_end}" y="{height - 31}" class="mono" font-size="12.5" text-anchor="end" fill="{theme.muted}">avatar -&gt; ASCII · adaptive</text>
+<text x="{right_end}" y="{height - 31}" class="mono" font-size="12.5" text-anchor="end" fill="{theme.muted}">full-color avatar · embedded</text>
 </svg>
 '''
     )
@@ -2180,8 +2178,17 @@ def render_readme(
         combined_lines.append(f"{left}   {right}")
     combined = "\n".join(combined_lines).replace("`", "")
 
+    login = xml(profile.get("login") or "GitHub user")
     return (
+        "<picture>\n"
+        '  <source media="(prefers-color-scheme: dark)" srcset="./assets/profile-terminal-dark.svg">\n'
+        '  <source media="(prefers-color-scheme: light)" srcset="./assets/profile-terminal-light.svg">\n'
+        f'  <img alt="@{login} profile card" src="./assets/profile-terminal-light.svg" width="100%">\n'
+        "</picture>\n\n"
+        "<details>\n"
+        "<summary>Copyable text version</summary>\n\n"
         f"```text\n{combined}\n```\n\n"
+        "</details>\n\n"
         "<!-- Generated by scripts/build_profile.py -->\n"
     )
 
@@ -2284,7 +2291,7 @@ def main() -> int:
     avatar_cache_path = Path(configured_cache) if configured_cache else None
     avatar = fetch_avatar(profile, avatar_path, avatar_cache_path)
     ascii_width = int(display.get("ascii_width") or 50)
-    cells, rows = avatar_to_ascii(
+    _cells, rows = avatar_to_ascii(
         avatar,
         ascii_width,
         float(display.get("avatar_vertical_focus") or 0.5),
@@ -2292,10 +2299,11 @@ def main() -> int:
         str(display.get("ascii_shape") or "rounded_square"),
         float(display.get("readme_avatar_rows_ratio") or 0.56),
     )
+    embedded_avatar = avatar_data_uri(avatar)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    dark_svg = render_svg(DARK, profile, stats, config, cells, max(30, min(58, ascii_width)))
-    light_svg = render_svg(LIGHT, profile, stats, config, cells, max(30, min(58, ascii_width)))
+    dark_svg = render_svg(DARK, profile, stats, config, embedded_avatar)
+    light_svg = render_svg(LIGHT, profile, stats, config, embedded_avatar)
     readme = render_readme(profile, stats, config, rows)
 
     dark_changed = write_svg_if_meaningfully_changed(
