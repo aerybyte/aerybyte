@@ -89,19 +89,13 @@ display:
     - current systems
     - github stats
 
-  readme_ascii_column_width: 55
   readme_info_column_width: 68
-  readme_avatar_rows_ratio: 0.50
   readme_compact: true
   show_public_email: false
 
   # Avatar source controls
   avatar_path: ""
   avatar_cache_path: "assets/avatar.png"
-  ascii_width: 54
-  avatar_vertical_focus: 0.50
-  avatar_zoom: 1.25
-  ascii_shape: "square" # rounded_square, circle, or square
 
 theme:
   accent: "#f97316"

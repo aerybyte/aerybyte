@@ -5,39 +5,39 @@
 </picture>
 
 <details>
-<summary>Copyable text version</summary>
+<summary>copyable text version</summary>
 
 ```text
-⡏⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⢹   +----------------------------------------------------------------------+
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | [eri reilly]                                                         |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | role = Software Engineer                                             |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⢀⡴⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | focus = Full-Stack Systems · Applied AI · Infrastructure             |
-⡇⠀⠀⠀⠀⠀⠀⠀⢠⡋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | education = Rutgers University — CS + Marketing                      |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⢙⡆⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | website = aeiree.com                                                 |
-⡇⠀⠀⠀⠀⠀⠀⠀⡰⠋⠀⠀⠀⠀⠀⠀⢀⠞⠁⠀⠀⠈⢇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | discord = @aeiree                                                    |
-⡇⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-⡇⠀⠀⠀⠀⠀⠀⠀⠘⠒⠒⡆⠀⠀⡸⠁⢸⠀⠀⠀⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | [top skills]                                                         |
-⡇⠀⠀⠀⠀⠀⠀⠀⡞⠁⠀⠀⠀⠀⡇⠓⠲⠒⠂⢝⠦⡄⠈⡆⢁⣸⡀⠀⠀⠀⢠⠤⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | languages = TypeScript · Python · JavaScript · SQL                   |
-⡇⠀⠀⠀⠀⠀⠀⠀⠙⢦⣀⡀⡀⠀⡇⠠⠤⠤⢂⡉⠈⢀⡀⠙⡋⠀⠙⣆⠀⢀⡜⠀⡹⡄⢀⡼⢹⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | frontend = React · React Native · Vite · Capacitor · Next.js         |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠇⡇⠀⢱⡀⠙⠲⣄⣹⠞⠁⠳⡼⠉⠳⣄⠘⠓⠪⣔⠙⡆⠜⢚⣀⣊⡀⠀⢠⠞⣩⠉⠓⢦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | backend = Node.js · PostgreSQL · Supabase · PostGIS · SQLite         |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢧⣰⠀⠙⠆⠀⡸⠁⠀⠀⠀⠁⠀⠀⠈⠉⠒⠒⠘⣎⠁⠀⠀⠈⠁⠈⡑⠋⡰⠁⢠⠔⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | ai = RAG · Open WebUI · LLM Tool Calling · NLP                       |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠄⠋⠁⡤⠒⠢⡀⠀⠀⠀⠉⠉⠉⠀⠀⠘⠦⠴⠋⠉⠧⠼⠁⠸⡀⠀⢘⠄⢸⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | infra = Docker · Kubernetes · gVisor · GitHub Actions · UniFi        |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⢰⠁⣠⠖⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠓⠤⠼⣠⠇⠀⣸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | testing = Jest · Supertest · Playwright · Appium                     |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢇⠀⠀⠘⠚⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⠴⠚⠁⠀⠀⠃⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | platforms = SAP · Firebase · GitHub · GitLab · Jira · New Relic      |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣆⠀⠴⢢⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠖⢲⠀⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | [current systems]                                                    |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢧⡀⠀⠱⡄⠀⠀⠀⠀⠀⠀⠀⢀⣠⠞⠁⢠⠏⠀⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | WOE = SAP-connected ordering · web / iOS / Android                   |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀⠹⣄⠀⠈⠂⠀⠀⠀⢀⡤⠖⠋⠀⢀⡴⠋⠀⠀⢠⠄⠓⠊⢹⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | Wilbur = Internal RAG assistant · secure AI workbench                |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠀⢯⡀⠀⠀⠀⠀⡴⠀⠀⠦⠤⣀⠰⡄⢧⠀⠀⠀⠯⠤⠒⣊⣉⠥⠞⢀⠀⠀⡄⠀⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | ATP = Geospatial social platform · React Native / PostGIS            |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠳⣄⠀⠀⠀⣇⠀⠀⠀⠀⠀⠀⡇⢠⡒⠒⠒⠚⠉⠉⡤⢌⠀⠈⠉⠒⠒⠁⠀⢱⠀⠐⠒⢦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠘⢦⡀⠀⠘⠒⠒⣉⡣⠀⠀⡇⢠⠋⣉⣉⣊⡉⡑⠓⠒⣠⠔⠒⠒⠢⠤⠤⠞⠀⠀⠀⠀⠙⠢⢤⡀⠀⠀⠀⠀⠀⠀⠀⢸   | [public github stats]                                                |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⠤⠞⠁⠀⠀⠹⡄⠀⢰⠋⠁⠀⠀⠀⣕⠀⡇⠀⠀⠀⡱⠁⠀⢠⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠁⠀⠀⠀⠀⠀⠀⢸   | repositories = 1                                                     |
-⡇⠀⠀⠒⠢⠔⠒⠒⠊⠉⠀⠀⠀⠀⢀⣀⣀⣹⠀⢸⣀⠀⠀⠀⠀⠘⡄⠓⣆⠀⣰⠃⠀⢀⡎⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | commits = 322                                                        |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠁⠀⠀⠀⠀⠀⠈⠣⠤⢄⣀⣐⣉⣁⣨⣋⠀⢧⠀⡜⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | + / - = +2,513 / -370                                                |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⠦⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠴⠊⠸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | lines of code = 2,886                                                |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
-⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸   | next scheduled slot = 2026-09-19 18:00 EDT                           |
-⣇⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣸   +----------------------------------------------------------------------+
++----------------------------------------------------------------------+
+| [eri reilly]                                                         |
+| role = software engineer                                             |
+| focus = full-stack systems · applied ai · infrastructure             |
+| education = rutgers university — cs + marketing                      |
+| website = aeiree.com                                                 |
+| discord = @aeiree                                                    |
+| - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| [top skills]                                                         |
+| languages = typescript · python · javascript · sql                   |
+| frontend = react · react native · vite · capacitor · next.js         |
+| backend = node.js · postgresql · supabase · postgis · sqlite         |
+| ai = rag · open webui · llm tool calling · nlp                       |
+| infra = docker · kubernetes · gvisor · github actions · unifi        |
+| testing = jest · supertest · playwright · appium                     |
+| platforms = sap · firebase · github · gitlab · jira · new relic      |
+| - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| [current systems]                                                    |
+| woe = sap-connected ordering · web / ios / android                   |
+| wilbur = internal rag assistant · secure ai workbench                |
+| atp = geospatial social platform · react native / postgis            |
+| - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| [public github stats]                                                |
+| repositories = 1                                                     |
+| commits = 323                                                        |
+| + / - = +8,897 / -5,289                                              |
+| lines of code = 81,165                                               |
+| - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  |
+| next scheduled slot = 2026-09-20 00:00 edt                           |
++----------------------------------------------------------------------+
 ```
 
 </details>

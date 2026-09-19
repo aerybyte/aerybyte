@@ -3,9 +3,9 @@ name: Refresh profile card
 "on":
   workflow_dispatch:
   schedule:
-    # Exact local slots: 12:00 AM, 6:00 AM, 12:00 PM, and 6:00 PM Eastern.
+    # Exact local slots: 12:00 AM and 12:00 PM Eastern.
     # GitHub may start scheduled runs late; the IANA timezone preserves the slots.
-    - cron: "0 */6 * * *"
+    - cron: "0 */12 * * *"
       timezone: "America/New_York"
   push:
     paths:
@@ -75,7 +75,7 @@ jobs:
       - name: Install renderer dependencies
         run: python -m pip install --disable-pip-version-check -r requirements.txt
 
-      - name: Rebuild profile card and ASCII portrait
+      - name: Rebuild profile card
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Optional override. Leave unset to use start_date from profile.template.yml.
@@ -94,7 +94,6 @@ jobs:
             git add \
               README.md \
               assets/avatar.png \
-              assets/avatar-ascii.txt \
               assets/github-stats-cache.json \
               assets/profile-terminal-dark.svg \
               assets/profile-terminal-light.svg

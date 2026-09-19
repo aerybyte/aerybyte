@@ -5,11 +5,10 @@ Outputs:
     README.md
   assets/profile-terminal-dark.svg
   assets/profile-terminal-light.svg
-  assets/avatar-ascii.txt
 
 The hosted workflow discovers the username from GITHUB_REPOSITORY_OWNER, reads
-public GitHub profile data, converts the current avatar into color ASCII art,
-and refreshes the generated assets on a timezone-aware cron schedule.
+public GitHub profile data, embeds the current avatar in themed SVG cards, and
+refreshes the generated assets on a timezone-aware cron schedule.
 """
 
 from __future__ import annotations
@@ -20,7 +19,6 @@ import json
 import hashlib
 import html
 import io
-import math
 import os
 import re
 import subprocess
@@ -36,26 +34,12 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import requests
 import yaml
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageOps
+from PIL import Image, ImageDraw
 
 API_ROOT = "https://api.github.com"
 GRAPHQL_URL = f"{API_ROOT}/graphql"
 API_VERSION = "2026-03-10"
 USER_AGENT = "aerybyte-dynamic-profile/1.0"
-ASCII_PALETTE = " .,:;irsXA253hMHGS#9B&@"
-BRAILLE_EDGE_THRESHOLD = 128
-BRAILLE_MIN_COMPONENT_SIZE = 12
-BRAILLE_CENTER_COMPONENT_SIZE = 6
-BRAILLE_DOTS = (
-    (0, 0, 0x01),
-    (0, 1, 0x02),
-    (0, 2, 0x04),
-    (1, 0, 0x08),
-    (1, 1, 0x10),
-    (1, 2, 0x20),
-    (0, 3, 0x40),
-    (1, 3, 0x80),
-)
 STATS_MAX_ATTEMPTS = 8
 STATS_RETRY_DELAY_SECONDS = 2.0
 PROFILE_SCHEDULE_TIMEZONE = "America/New_York"
@@ -111,14 +95,6 @@ LIGHT = Theme(
 )
 
 
-@dataclass(frozen=True)
-class AsciiCell:
-    column: int
-    row: int
-    char: str
-    rgb: tuple[int, int, int]
-
-
 def xml(value: Any) -> str:
     return html.escape(str(value), quote=True)
 
@@ -171,22 +147,6 @@ def rgb_to_hex(values: Iterable[int | float]) -> str:
 def mix(a: tuple[int, int, int], b: tuple[int, int, int], amount: float) -> tuple[int, int, int]:
     amount = clamp(amount, 0.0, 1.0)
     return tuple(round(x * (1 - amount) + y * amount) for x, y in zip(a, b))  # type: ignore[return-value]
-
-
-def luminance(rgb: tuple[int, int, int]) -> float:
-    r, g, b = rgb
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b
-
-
-def legible_avatar_color(rgb: tuple[int, int, int], theme: Theme) -> str:
-    lum = luminance(rgb)
-    if theme.name == "dark":
-        lift = clamp((122.0 - lum) / 230.0, 0.06, 0.48)
-        adjusted = mix(rgb, (240, 246, 255), lift)
-    else:
-        deepen = clamp((lum - 142.0) / 300.0, 0.02, 0.34)
-        adjusted = mix(rgb, (19, 27, 42), deepen)
-    return rgb_to_hex(adjusted)
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -250,18 +210,6 @@ def validate_config(config: Mapping[str, Any], config_path: Path) -> None:
         issues.append(
             "uptime.timezone must be a valid IANA timezone like America/New_York, Europe/London, or Asia/Tokyo."
         )
-
-    shape = str(display_config.get("ascii_shape") or "rounded_square").strip().lower()
-    if shape not in {"rounded_square", "circle", "square"}:
-        notes.append(
-            "display.ascii_shape is not one of rounded_square/circle/square. The renderer may fall back to rounded_square."
-        )
-
-    if "ascii_width" in display_config:
-        try:
-            int(display_config.get("ascii_width"))
-        except (TypeError, ValueError):
-            issues.append("display.ascii_width must be a number.")
 
     section_order = display_config.get("readme_section_order")
     if section_order is not None:
@@ -1262,270 +1210,6 @@ def fetch_avatar(
     return placeholder_avatar(str(profile.get("login") or "github"))
 
 
-def rounded_square_contains(column: int, row: int, width: int, rows: int, radius_ratio: float = 0.16) -> bool:
-    radius = max(1.0, min(width, rows) * radius_ratio)
-    x = column + 0.5
-    y = row + 0.5
-    if radius <= x <= width - radius or radius <= y <= rows - radius:
-        return True
-    corner_x = radius if x < radius else width - radius
-    corner_y = radius if y < radius else rows - radius
-    return (x - corner_x) ** 2 + (y - corner_y) ** 2 <= radius**2
-
-
-def inside_shape(column: int, row: int, width: int, rows: int, shape: str) -> bool:
-    if shape == "square":
-        return True
-    if shape == "circle":
-        nx = (column + 0.5 - width / 2) / (width / 2)
-        ny = (row + 0.5 - rows / 2) / (rows / 2)
-        return nx * nx + ny * ny <= 0.97
-    return rounded_square_contains(column, row, width, rows)
-
-
-def edge_image_to_braille(
-    edge_image: Image.Image,
-    width: int,
-    rows: int,
-    shape: str,
-    threshold: int = BRAILLE_EDGE_THRESHOLD,
-) -> list[str]:
-    dot_map = edge_image.resize((width * 2, rows * 4), Image.Resampling.LANCZOS)
-    output: list[str] = []
-    for row in range(rows):
-        line: list[str] = []
-        for column in range(width):
-            mask = 0
-            for offset_x, offset_y, bit in BRAILLE_DOTS:
-                dot_x = column * 2 + offset_x
-                dot_y = row * 4 + offset_y
-                if not inside_shape(dot_x, dot_y, width * 2, rows * 4, shape):
-                    continue
-                edge = int(dot_map.getpixel((dot_x, dot_y)))
-                if edge >= threshold:
-                    mask |= bit
-            line.append(chr(0x2800 + mask) if mask else " ")
-        output.append("".join(line).rstrip())
-    return output
-
-
-def remove_isolated_edge_components(
-    edge_image: Image.Image,
-    threshold: int,
-    minimum_size: int = BRAILLE_MIN_COMPONENT_SIZE,
-) -> Image.Image:
-    """Remove border clutter and tiny speckles while retaining centered detail."""
-    cleaned = edge_image.copy()
-    pixels = cleaned.load()
-    center_left = cleaned.width // 4
-    center_right = cleaned.width * 3 // 4
-    center_top = cleaned.height // 5
-    center_bottom = cleaned.height * 4 // 5
-    frame_margin = max(1, cleaned.width // 10)
-    candidates = {
-        (x, y)
-        for y in range(cleaned.height)
-        for x in range(cleaned.width)
-        if int(pixels[x, y]) >= threshold
-    }
-
-    while candidates:
-        seed = candidates.pop()
-        component = {seed}
-        pending = [seed]
-        while pending:
-            x, y = pending.pop()
-            for neighbor_x in range(max(0, x - 1), min(cleaned.width, x + 2)):
-                for neighbor_y in range(max(0, y - 1), min(cleaned.height, y + 2)):
-                    neighbor = (neighbor_x, neighbor_y)
-                    if neighbor not in candidates:
-                        continue
-                    candidates.remove(neighbor)
-                    component.add(neighbor)
-                    pending.append(neighbor)
-        required_size = (
-            BRAILLE_CENTER_COMPONENT_SIZE
-            if any(
-                center_left <= x < center_right and center_top <= y < center_bottom
-                for x, y in component
-            )
-            else minimum_size
-        )
-        reaches_interior = any(
-            frame_margin <= x < cleaned.width - frame_margin for x, _y in component
-        )
-        if len(component) < required_size or not reaches_interior:
-            for x, y in component:
-                pixels[x, y] = 0
-    return cleaned
-
-
-def color_edge_map(image: Image.Image) -> Image.Image:
-    """Return a denoised edge map that retains boundaries between different hues."""
-    smoothed = (
-        image.convert("RGB")
-        .filter(ImageFilter.MedianFilter(3))
-        .filter(ImageFilter.GaussianBlur(0.8))
-    )
-    width, height = smoothed.size
-    channel_images = smoothed.split()
-    channels = [channel.load() for channel in channel_images]
-    magnitudes = [[0.0] * width for _ in range(height)]
-    directions = [[0.0] * width for _ in range(height)]
-
-    for y in range(1, height - 1):
-        for x in range(1, width - 1):
-            strongest_magnitude = 0.0
-            strongest_direction = 0.0
-            for pixels in channels:
-                gradient_x = (
-                    -pixels[x - 1, y - 1]
-                    + pixels[x + 1, y - 1]
-                    - 2 * pixels[x - 1, y]
-                    + 2 * pixels[x + 1, y]
-                    - pixels[x - 1, y + 1]
-                    + pixels[x + 1, y + 1]
-                ) / 4.0
-                gradient_y = (
-                    -pixels[x - 1, y - 1]
-                    - 2 * pixels[x, y - 1]
-                    - pixels[x + 1, y - 1]
-                    + pixels[x - 1, y + 1]
-                    + 2 * pixels[x, y + 1]
-                    + pixels[x + 1, y + 1]
-                ) / 4.0
-                magnitude = math.hypot(gradient_x, gradient_y)
-                if magnitude > strongest_magnitude:
-                    strongest_magnitude = magnitude
-                    strongest_direction = math.degrees(math.atan2(gradient_y, gradient_x)) % 180
-            magnitudes[y][x] = strongest_magnitude
-            directions[y][x] = strongest_direction
-
-    normalized = [[0.0] * width for _ in range(height)]
-    for y in range(height):
-        for x in range(width):
-            neighborhood = [
-                magnitudes[neighbor_y][neighbor_x]
-                for neighbor_y in range(max(0, y - 3), min(height, y + 4))
-                for neighbor_x in range(max(0, x - 3), min(width, x + 4))
-            ]
-            local_max = max(neighborhood)
-            normalized[y][x] = (
-                magnitudes[y][x]
-                if local_max < 30
-                else min(255.0, magnitudes[y][x] / local_max * 255.0)
-            )
-
-    thinned = [[0.0] * width for _ in range(height)]
-    for y in range(1, height - 1):
-        for x in range(1, width - 1):
-            direction = directions[y][x]
-            magnitude = normalized[y][x]
-            if direction < 22.5 or direction >= 157.5:
-                neighbors = (normalized[y][x - 1], normalized[y][x + 1])
-            elif direction < 67.5:
-                neighbors = (normalized[y - 1][x - 1], normalized[y + 1][x + 1])
-            elif direction < 112.5:
-                neighbors = (normalized[y - 1][x], normalized[y + 1][x])
-            else:
-                neighbors = (normalized[y - 1][x + 1], normalized[y + 1][x - 1])
-            if magnitude >= max(neighbors):
-                thinned[y][x] = magnitude
-
-    strong = {
-        (x, y)
-        for y in range(height)
-        for x in range(width)
-        if thinned[y][x] >= 38
-    }
-    weak = {
-        (x, y)
-        for y in range(height)
-        for x in range(width)
-        if 19 <= thinned[y][x] < 38
-    }
-    edge_map = Image.new("L", (width, height), 0)
-    edge_pixels = edge_map.load()
-    pending = list(strong)
-    for x, y in strong:
-        edge_pixels[x, y] = 255
-    while pending:
-        x, y = pending.pop()
-        for neighbor_y in range(max(0, y - 1), min(height, y + 2)):
-            for neighbor_x in range(max(0, x - 1), min(width, x + 2)):
-                neighbor = (neighbor_x, neighbor_y)
-                if neighbor not in weak:
-                    continue
-                weak.remove(neighbor)
-                edge_pixels[neighbor_x, neighbor_y] = 255
-                pending.append(neighbor)
-    return edge_map
-
-
-def avatar_to_ascii(
-    image: Image.Image,
-    width: int,
-    vertical_focus: float,
-    zoom: float,
-    shape: str,
-    text_row_ratio: float = 0.56,
-) -> tuple[list[AsciiCell], list[str]]:
-    width = max(30, min(58, int(width)))
-    rows = max(24, round(width * 0.76))
-    text_rows = max(18, round(width * clamp(float(text_row_ratio), 0.42, 0.80)))
-    vertical_focus = clamp(float(vertical_focus), 0.0, 1.0)
-    zoom = clamp(float(zoom), 1.0, 1.35)
-    shape = shape.strip().lower()
-    if shape not in {"rounded_square", "circle", "square"}:
-        shape = "rounded_square"
-
-    fitted = ImageOps.fit(
-        image.convert("RGB"),
-        (720, 720),
-        method=Image.Resampling.LANCZOS,
-        centering=(0.5, vertical_focus),
-    )
-    if zoom > 1.001:
-        inset = round(360 * (1 - 1 / zoom))
-        fitted = fitted.crop((inset, inset, 720 - inset, 720 - inset)).resize((720, 720), Image.Resampling.LANCZOS)
-    fitted = ImageEnhance.Color(fitted).enhance(1.10)
-    fitted = ImageEnhance.Contrast(fitted).enhance(1.06)
-    fitted = fitted.filter(ImageFilter.DETAIL)
-
-    colors = fitted.resize((width, rows), Image.Resampling.LANCZOS)
-    gray_full = ImageOps.autocontrast(ImageOps.grayscale(fitted), cutoff=1)
-    edge_full = ImageOps.autocontrast(gray_full.filter(ImageFilter.FIND_EDGES), cutoff=2)
-    braille_source = fitted.resize((width * 2, text_rows * 4), Image.Resampling.LANCZOS)
-    braille_edges = color_edge_map(braille_source)
-    gray = gray_full.resize((width, rows), Image.Resampling.LANCZOS)
-    edges = edge_full.resize((width, rows), Image.Resampling.LANCZOS)
-
-    cells: list[AsciiCell] = []
-    for row in range(rows):
-        for column in range(width):
-            if not inside_shape(column, row, width, rows, shape):
-                continue
-            intensity = int(gray.getpixel((column, row)))
-            edge = int(edges.getpixel((column, row)))
-            density = 0.79 * (1 - intensity / 255.0) + 0.21 * (edge / 255.0)
-            palette_index = min(len(ASCII_PALETTE) - 1, max(0, int(density * (len(ASCII_PALETTE) - 1))))
-            char = ASCII_PALETTE[palette_index]
-            rgb = tuple(int(channel) for channel in colors.getpixel((column, row)))
-            if char != " ":
-                cells.append(AsciiCell(column, row, char, rgb))
-    braille_edges = remove_isolated_edge_components(
-        braille_edges,
-        BRAILLE_EDGE_THRESHOLD,
-    )
-    return cells, edge_image_to_braille(
-        braille_edges,
-        width,
-        text_rows,
-        shape,
-        threshold=BRAILLE_EDGE_THRESHOLD,
-    )
-
-
 def offline_fixture(username: str, config: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     preview = config.get("preview") if isinstance(config.get("preview"), dict) else {}
     return (
@@ -1677,7 +1361,16 @@ def render_svg(
         accent = rgb_to_hex(mix(hex_to_rgb(accent), (20, 27, 40), 0.13))
         accent_2 = rgb_to_hex(mix(hex_to_rgb(accent_2), (20, 27, 40), 0.23))
 
-    sections = build_sections(profile, stats, config)
+    sections = [
+        (
+            section_name.lower(),
+            [
+                (label.lower(), value.lower(), color_key)
+                for label, value, color_key in rows
+            ],
+        )
+        for section_name, rows in build_sections(profile, stats, config)
+    ]
     total_rows = sum(len(rows) for _, rows in sections)
     section_count = len(sections)
 
@@ -1706,11 +1399,11 @@ def render_svg(
     right_x = divider_x + 42
     value_x = right_x + 230
     right_end = width - 52
-    name = clean(profile.get("name") or profile.get("login") or "aery", 34)
-    login = clean(profile.get("login") or "aerybyte", 30)
+    name = clean(profile.get("name") or profile.get("login") or "aery", 34).lower()
+    login = clean(profile.get("login") or "aerybyte", 30).lower()
     local_zone = profile_timezone(config)
-    refreshed = datetime.now(local_zone).strftime("%Y-%m-%d %H:%M %Z")
-    source = clean(stats.get("source") or "live GitHub data", 22)
+    refreshed = datetime.now(local_zone).strftime("%Y-%m-%d %H:%M %Z").lower()
+    source = clean(stats.get("source") or "live github data", 22).lower()
     top_status = clean(profile.get("bio") or "grinding", 18).lower()
 
     value_colors = {
@@ -1724,8 +1417,8 @@ def render_svg(
 
     parts: list[str] = [
         f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">
-<title id="title">Dynamic GitHub profile card for @{xml(login)}</title>
-<desc id="desc">A terminal-style profile with the current full-color GitHub avatar and refreshed public statistics.</desc>
+<title id="title">dynamic github profile card for @{xml(login)}</title>
+<desc id="desc">a terminal-style profile with the current full-color github avatar and refreshed public statistics.</desc>
 <defs>
   <linearGradient id="pageGradient" x1="0" y1="0" x2="1" y2="1">
     <stop offset="0%" stop-color="{theme.page}"/>
@@ -1766,7 +1459,7 @@ def render_svg(
 <circle cx="49" cy="50" r="6" fill="{theme.danger}"/>
 <circle cx="70" cy="50" r="6" fill="{theme.warning}"/>
 <circle cx="91" cy="50" r="6" fill="{theme.success}"/>
-<text x="116" y="56" class="mono" font-size="14" fill="{theme.muted}">@{xml(login)} / README.md</text>
+<text x="116" y="56" class="mono" font-size="14" fill="{theme.muted}">@{xml(login)} / readme.md</text>
 <text x="{header_right}" y="56" class="mono" font-size="13" text-anchor="end" fill="{theme.muted}">{xml(top_status)}<tspan class="cursor" fill="{accent_2}">_</tspan></text>
 <line x1="34" y1="76" x2="{header_rule_right}" y2="76" stroke="{theme.border}"/>
 <rect x="{art_panel_x}" y="{art_panel_y}" width="{art_panel_width}" height="{art_panel_height:.1f}" rx="18" fill="{theme.panel_alt}" stroke="{theme.border}"/>
@@ -1847,7 +1540,7 @@ def _section_header(title: str, width: int = 74) -> str:
     return f"{heading} {'-' * suffix}"
 
 
-def _next_refresh(local_zone: ZoneInfo, minute: int = 0, hour_step: int = 6) -> tuple[str, str]:
+def _next_refresh(local_zone: ZoneInfo, minute: int = 0, hour_step: int = 12) -> tuple[str, str]:
     schedule_zone = ZoneInfo(PROFILE_SCHEDULE_TIMEZONE)
     now = datetime.now(schedule_zone).replace(second=0, microsecond=0)
     candidate = now.replace(minute=minute)
@@ -1907,31 +1600,6 @@ def _pick_rows(
     return [entry for entry in rows if entry[0].strip().lower() in allowed_labels]
 
 
-def _fit_square_ascii_for_readme(
-    ascii_rows: list[str],
-    row_ratio: float,
-) -> list[str]:
-    if not ascii_rows:
-        return ascii_rows
-
-    width = max((len(row) for row in ascii_rows), default=0)
-    if width <= 0:
-        return ascii_rows
-
-    ratio = clamp(float(row_ratio), 0.42, 0.80)
-    target_rows = max(18, int(round(width * ratio)))
-    source_rows = [row.ljust(width) for row in ascii_rows]
-    source_count = len(source_rows)
-    if source_count <= 1 or source_count == target_rows:
-        return source_rows
-
-    output: list[str] = []
-    for index in range(target_rows):
-        source_index = round(index * (source_count - 1) / max(1, target_rows - 1))
-        output.append(source_rows[source_index])
-    return output
-
-
 def _plain(value: Any) -> str:
     text = " ".join(str(value or "").split()).strip()
     return text.replace("`", "")
@@ -1964,27 +1632,6 @@ def _box_lines(lines: list[str], width: int, centered: bool = False) -> list[str
             content = _clip_no_ellipsis(str(line), width).ljust(width)
         output.append(f"| {content} |")
     output.append(top)
-    return output
-
-
-def _is_braille_art(lines: list[str]) -> bool:
-    characters = [
-        character
-        for line in lines
-        for character in line
-        if character not in {" ", "\u2800"}
-    ]
-    return bool(characters) and all("\u2801" <= character <= "\u28ff" for character in characters)
-
-
-def _braille_box_lines(lines: list[str], width: int) -> list[str]:
-    blank = "\u2800"
-    output = ["⡏" + "⠉" * (width + 2) + "⢹"]
-    for line in lines:
-        content = str(line)[:width].replace(" ", blank)
-        content += blank * (width - len(content))
-        output.append("⡇" + blank + content + blank + "⢸")
-    output.append("⣇" + "⣀" * (width + 2) + "⣸")
     return output
 
 
@@ -2120,31 +1767,19 @@ def render_readme(
     profile: Mapping[str, Any],
     stats: Mapping[str, Any],
     config: Mapping[str, Any],
-    ascii_rows: list[str],
 ) -> str:
     display = config.get("display") if isinstance(config.get("display"), dict) else {}
     local_zone = profile_timezone(config)
     _next_eta, next_at = _next_refresh(local_zone)
-    square_rows = _fit_square_ascii_for_readme(
-        ascii_rows,
-        float(display.get("readme_avatar_rows_ratio") or 0.56),
-    )
-    intrinsic_left_width = max((len(row) for row in square_rows), default=44)
-    left_width = max(38, min(56, int(display.get("readme_ascii_column_width") or intrinsic_left_width)))
-    # keep one blank column against the right border to avoid visual artifacts
-    # where dense ascii can look like stray punctuation near the divider.
-    avatar_inner_width = max(1, left_width - 1)
-    avatar_lines = [row[:avatar_inner_width].ljust(avatar_inner_width) + " " for row in square_rows]
-
     metadata_width = max(56, min(78, int(display.get("readme_info_column_width") or 64)))
     metadata_sections = _metadata_rows_for_readme(profile, stats, config)
     metadata_ini_lines: list[str] = []
     divider = ("- " * (metadata_width // 2 + 2)).strip()[:metadata_width]
     for index, (section_name, rows) in enumerate(metadata_sections):
-        safe_section = _plain(section_name)
+        safe_section = _plain(section_name).lower()
         metadata_ini_lines.append(f"[{safe_section}]")
         for row in rows:
-            safe_row = _plain(row)
+            safe_row = _plain(row).lower()
             key, separator, value = safe_row.partition(":")
             if separator:
                 metadata_ini_lines.append(f"{key.strip()} = {value.strip()}")
@@ -2153,32 +1788,11 @@ def render_readme(
         if index < len(metadata_sections) - 1:
             metadata_ini_lines.append(divider)
     metadata_ini_lines.append(divider)
-    metadata_ini_lines.append(f"next scheduled slot = {next_at}")
-    body_height = max(len(avatar_lines), len(metadata_ini_lines))
-    avatar_pad = body_height - len(avatar_lines)
-    avatar_lines = (
-        [""] * (avatar_pad // 2)
-        + avatar_lines
-        + [""] * (avatar_pad - avatar_pad // 2)
-    )
-    metadata_ini_lines.extend([""] * (body_height - len(metadata_ini_lines)))
-    if _is_braille_art(square_rows):
-        avatar_box_lines = _braille_box_lines(avatar_lines, left_width)
-    else:
-        avatar_box_lines = _box_lines(avatar_lines, left_width, centered=False)
+    metadata_ini_lines.append(f"next scheduled slot = {next_at.lower()}")
     metadata_box_lines = _box_lines(metadata_ini_lines, metadata_width, centered=False)
+    combined = "\n".join(metadata_box_lines).replace("`", "")
 
-    combined_lines: list[str] = []
-    total_lines = max(len(avatar_box_lines), len(metadata_box_lines))
-    left_blank = " " * len(avatar_box_lines[0]) if avatar_box_lines else ""
-    right_blank = " " * len(metadata_box_lines[0]) if metadata_box_lines else ""
-    for index in range(total_lines):
-        left = avatar_box_lines[index] if index < len(avatar_box_lines) else left_blank
-        right = metadata_box_lines[index] if index < len(metadata_box_lines) else right_blank
-        combined_lines.append(f"{left}   {right}")
-    combined = "\n".join(combined_lines).replace("`", "")
-
-    login = xml(profile.get("login") or "GitHub user")
+    login = xml(str(profile.get("login") or "github user").lower())
     return (
         "<picture>\n"
         '  <source media="(prefers-color-scheme: dark)" srcset="./assets/profile-terminal-dark.svg">\n'
@@ -2186,7 +1800,7 @@ def render_readme(
         f'  <img alt="@{login} profile card" src="./assets/profile-terminal-light.svg" width="100%">\n'
         "</picture>\n\n"
         "<details>\n"
-        "<summary>Copyable text version</summary>\n\n"
+        "<summary>copyable text version</summary>\n\n"
         f"```text\n{combined}\n```\n\n"
         "</details>\n\n"
         "<!-- Generated by scripts/build_profile.py -->\n"
@@ -2290,21 +1904,12 @@ def main() -> int:
     configured_cache = str(display.get("avatar_cache_path") or "assets/avatar.png").strip()
     avatar_cache_path = Path(configured_cache) if configured_cache else None
     avatar = fetch_avatar(profile, avatar_path, avatar_cache_path)
-    ascii_width = int(display.get("ascii_width") or 50)
-    _cells, rows = avatar_to_ascii(
-        avatar,
-        ascii_width,
-        float(display.get("avatar_vertical_focus") or 0.5),
-        float(display.get("avatar_zoom") or 1.0),
-        str(display.get("ascii_shape") or "rounded_square"),
-        float(display.get("readme_avatar_rows_ratio") or 0.56),
-    )
     embedded_avatar = avatar_data_uri(avatar)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     dark_svg = render_svg(DARK, profile, stats, config, embedded_avatar)
     light_svg = render_svg(LIGHT, profile, stats, config, embedded_avatar)
-    readme = render_readme(profile, stats, config, rows)
+    readme = render_readme(profile, stats, config)
 
     dark_changed = write_svg_if_meaningfully_changed(
         args.output_dir / "profile-terminal-dark.svg", dark_svg
@@ -2312,12 +1917,9 @@ def main() -> int:
     light_changed = write_svg_if_meaningfully_changed(
         args.output_dir / "profile-terminal-light.svg", light_svg
     )
-    ascii_changed = write_text_if_changed(
-        args.output_dir / "avatar-ascii.txt", "\n".join(rows) + "\n"
-    )
     readme_changed = write_readme_if_meaningfully_changed(Path("README.md"), readme)
 
-    changed = dark_changed or light_changed or ascii_changed or readme_changed
+    changed = dark_changed or light_changed or readme_changed
     state = "updated" if changed else "already current"
     print(f"Profile card for @{profile.get('login', username)} is {state} in {args.output_dir}")
     return 0

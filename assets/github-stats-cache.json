@@ -1,18 +1,18 @@
 {
   "login": "aeiree",
   "stats": {
-    "additions": 2513,
-    "commits": 322,
+    "additions": 8897,
+    "commits": 323,
     "contributions": 892,
-    "deletions": 370,
+    "deletions": 5289,
     "includes_private": false,
     "language_weights": {
-      "Python": 109687
+      "Python": 3012
     },
-    "lines_of_code": 2886,
+    "lines_of_code": 81165,
     "repo_count": 1,
-    "source": "GitHub GraphQL",
+    "source": "GitHub REST API",
     "stars": 0
   },
-  "updated_at_utc": "2026-09-19T19:08:54+00:00"
+  "updated_at_utc": "2026-09-19T19:22:53+00:00"
 }

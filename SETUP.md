@@ -23,7 +23,7 @@ python -m pip install -r requirements.txt
 ```
 
 These dependencies are used by the renderer for GitHub API calls, YAML parsing,
-image processing, and ASCII generation.
+image processing, and SVG generation.
 
 ## What to edit
 
@@ -51,7 +51,7 @@ Automatic values (cron updates these during each run):
 - GitHub stats (repositories, commits, + / - line churn, lines of code, scope)
 - next scheduled slot timestamp
 - timezone suffix details (EST/EDT and UTC offset)
-- avatar-ascii render and SVG assets
+- embedded full-color avatar and SVG assets
 
 ## Quick start (copy to your own profile repo)
 
@@ -76,7 +76,6 @@ Automatic values (cron updates these during each run):
 1. Confirm generated files updated.
 
 - README.md
-- assets/avatar-ascii.txt
 - assets/profile-terminal-dark.svg
 - assets/profile-terminal-light.svg
 - assets/github-stats-cache.json
@@ -89,13 +88,13 @@ Workflow file:
 
 Schedule:
 
-- `0 */6 * * *` in `America/New_York`
-- Nominal slots are exactly 12:00 AM, 6:00 AM, 12:00 PM, and 6:00 PM Eastern
+- `0 */12 * * *` in `America/New_York`
+- Nominal slots are exactly 12:00 AM and 12:00 PM Eastern
 - The IANA timezone keeps those local slots aligned through EDT and EST
 
 GitHub scheduled runs are best-effort and can start later than their nominal
 slot. These exact top-of-hour slots can experience scheduler congestion, so a
-late Actions start does not mean the six-hour schedule itself changed.
+late Actions start does not mean the twelve-hour schedule itself changed.
 The workflow is anchored to `America/New_York`; if the profile display uses a
 different IANA timezone, the generator converts the next scheduled slot into
 that display timezone.
@@ -136,7 +135,7 @@ display section:
 
 - readme_section_order: metadata layout order
 - avatar_path: local image override when non-empty
-- ascii_shape: rounded_square, circle, or square
+- avatar_cache_path: cached avatar used when a live download is unavailable
 
 ## Secrets and optional environment variables
 
@@ -174,7 +173,6 @@ Examples of what is validated:
 
 - timezone format (must be a valid IANA timezone)
 - allowed values for uptime.source and uptime.precision
-- display.ascii_shape value
 - structure for profile.additional_fields and section order lists
 
 If validation fails, fix the listed items and run the command again.
