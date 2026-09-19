@@ -91,7 +91,7 @@ display:
   avatar_cache_path: "assets/avatar.png"
   ascii_width: 46
   avatar_vertical_focus: 0.50
-  avatar_zoom: 1.05
+  avatar_zoom: 1.25
   ascii_shape: "square" # rounded_square, circle, or square
 
 theme:

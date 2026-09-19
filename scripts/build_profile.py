@@ -43,6 +43,10 @@ API_VERSION = "2026-03-10"
 USER_AGENT = "aerybyte-dynamic-profile/1.0"
 ASCII_PALETTE = " .,:;irsXA253hMHGS#9B&@"
 BRAILLE_EDGE_THRESHOLD = 20
+BRAILLE_EDGE_THRESHOLD_MAX = 42
+BRAILLE_BACKGROUND_PERCENTILE = 0.98
+BRAILLE_BACKGROUND_MARGIN = 4
+BRAILLE_MIN_COMPONENT_SIZE = 12
 BRAILLE_DOTS = (
     (0, 0, 0x01),
     (0, 1, 0x02),
@@ -1279,6 +1283,7 @@ def edge_image_to_braille(
     width: int,
     rows: int,
     shape: str,
+    threshold: int = BRAILLE_EDGE_THRESHOLD,
 ) -> list[str]:
     dot_map = edge_image.resize((width * 2, rows * 4), Image.Resampling.LANCZOS)
     output: list[str] = []
@@ -1292,11 +1297,65 @@ def edge_image_to_braille(
                 if not inside_shape(dot_x, dot_y, width * 2, rows * 4, shape):
                     continue
                 edge = int(dot_map.getpixel((dot_x, dot_y)))
-                if edge >= BRAILLE_EDGE_THRESHOLD:
+                if edge >= threshold:
                     mask |= bit
             line.append(chr(0x2800 + mask) if mask else " ")
         output.append("".join(line).rstrip())
     return output
+
+
+def adaptive_braille_edge_threshold(edge_image: Image.Image) -> int:
+    """Raise the edge cutoff when the avatar background contains colored grain."""
+    frame_width = max(1, edge_image.width // 6)
+    background_samples = sorted(
+        int(edge_image.getpixel((x, y)))
+        for y in range(edge_image.height)
+        for x in range(edge_image.width)
+        if x < frame_width or x >= edge_image.width - frame_width
+    )
+    percentile_index = round(
+        (len(background_samples) - 1) * BRAILLE_BACKGROUND_PERCENTILE
+    )
+    background_noise = background_samples[percentile_index]
+    return min(
+        BRAILLE_EDGE_THRESHOLD_MAX,
+        max(BRAILLE_EDGE_THRESHOLD, background_noise + BRAILLE_BACKGROUND_MARGIN),
+    )
+
+
+def remove_isolated_edge_components(
+    edge_image: Image.Image,
+    threshold: int,
+    minimum_size: int = BRAILLE_MIN_COMPONENT_SIZE,
+) -> Image.Image:
+    """Remove disconnected speckles while retaining coherent portrait strokes."""
+    cleaned = edge_image.copy()
+    pixels = cleaned.load()
+    candidates = {
+        (x, y)
+        for y in range(cleaned.height)
+        for x in range(cleaned.width)
+        if int(pixels[x, y]) >= threshold
+    }
+
+    while candidates:
+        seed = candidates.pop()
+        component = {seed}
+        pending = [seed]
+        while pending:
+            x, y = pending.pop()
+            for neighbor_x in range(max(0, x - 1), min(cleaned.width, x + 2)):
+                for neighbor_y in range(max(0, y - 1), min(cleaned.height, y + 2)):
+                    neighbor = (neighbor_x, neighbor_y)
+                    if neighbor not in candidates:
+                        continue
+                    candidates.remove(neighbor)
+                    component.add(neighbor)
+                    pending.append(neighbor)
+        if len(component) < minimum_size:
+            for x, y in component:
+                pixels[x, y] = 0
+    return cleaned
 
 
 def color_edge_map(image: Image.Image) -> Image.Image:
@@ -1405,7 +1464,18 @@ def avatar_to_ascii(
             rgb = tuple(int(channel) for channel in colors.getpixel((column, row)))
             if char != " ":
                 cells.append(AsciiCell(column, row, char, rgb))
-    return cells, edge_image_to_braille(braille_edges, width, text_rows, shape)
+    edge_threshold = adaptive_braille_edge_threshold(braille_edges)
+    braille_edges = remove_isolated_edge_components(
+        braille_edges,
+        edge_threshold,
+    )
+    return cells, edge_image_to_braille(
+        braille_edges,
+        width,
+        text_rows,
+        shape,
+        threshold=edge_threshold,
+    )
 
 
 def offline_fixture(username: str, config: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:

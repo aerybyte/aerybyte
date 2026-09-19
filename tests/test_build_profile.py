@@ -165,6 +165,57 @@ class ReadmeRenderingTests(unittest.TestCase):
 
 
 class AvatarRenderingTests(unittest.TestCase):
+    def test_isolated_colored_background_speckles_are_removed(self) -> None:
+        image = Image.new("RGB", (160, 160), (22, 42, 76))
+        draw = ImageDraw.Draw(image)
+        for x, y in ((12, 18), (24, 52), (14, 96), (136, 30), (146, 74), (132, 124)):
+            draw.rectangle((x, y, x + 4, y + 4), fill=(170, 110, 80))
+
+        draw.ellipse((44, 18, 116, 146), fill=(205, 190, 175))
+        draw.pieslice((38, 10, 122, 92), 180, 360, fill=(28, 24, 42))
+        draw.line((60, 77, 70, 77), fill=(18, 18, 24), width=4)
+        draw.line((90, 77, 100, 77), fill=(18, 18, 24), width=4)
+        draw.arc((70, 102, 90, 117), 0, 180, fill=(90, 40, 50), width=3)
+
+        _cells, rows = build_profile.avatar_to_ascii(image, 40, 0.5, 1.0, "square")
+        grid = [row.ljust(40) for row in rows]
+        background_cells = sum(
+            character != " " for row in grid for character in row[:8] + row[-8:]
+        )
+        face_cells = sum(
+            character != " " for row in grid[5:20] for character in row[10:30]
+        )
+
+        self.assertEqual(0, background_cells)
+        self.assertGreater(face_cells, 45)
+
+    def test_colored_background_grain_is_suppressed_without_losing_the_face(self) -> None:
+        image = Image.new("RGB", (160, 160), (22, 42, 76))
+        draw = ImageDraw.Draw(image)
+        for x in range(0, 40, 8):
+            draw.line((x, 0, x, 159), fill=(57, 77, 111), width=2)
+        for x in range(120, 160, 8):
+            draw.line((x, 0, x, 159), fill=(57, 77, 111), width=2)
+
+        draw.ellipse((42, 16, 118, 150), fill=(205, 190, 175))
+        draw.pieslice((36, 8, 124, 94), 180, 360, fill=(28, 24, 42))
+        draw.line((58, 76, 69, 76), fill=(18, 18, 24), width=4)
+        draw.line((91, 76, 102, 76), fill=(18, 18, 24), width=4)
+        draw.line((78, 85, 75, 101), fill=(60, 50, 55), width=3)
+        draw.arc((69, 101, 91, 118), 0, 180, fill=(90, 40, 50), width=3)
+
+        _cells, rows = build_profile.avatar_to_ascii(image, 40, 0.5, 1.0, "square")
+        grid = [row.ljust(40) for row in rows]
+        background_cells = sum(
+            character != " " for row in grid for character in row[:8] + row[-8:]
+        )
+        face_cells = sum(
+            character != " " for row in grid[5:20] for character in row[10:30]
+        )
+
+        self.assertLess(background_cells, 18)
+        self.assertGreater(face_cells, 55)
+
     def test_color_texture_does_not_overwhelm_copyable_portrait(self) -> None:
         image = Image.new("RGB", (128, 128))
         pixels = image.load()
